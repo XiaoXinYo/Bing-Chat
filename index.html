@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="zh-cn">
+    <head>
+        <meta charset="utf-8">
+        <title>Bing Chat</title>
+        <meta name="keywords" content="Bing Chat">
+        <meta name="description" content="Bing Chat.">
+        <meta name="viewport" content="width=device-width,initial-scale=1,minimum-scale=1,maximum-scale=1,user-scalable=no"/>
+        <link rel="stylesheet" type="text/css" href="https://cdn.bootcdn.net/ajax/libs/mdui/1.0.2/css/mdui.min.css"/>
+        <script type="text/javascript" src="https://cdn.bootcdn.net/ajax/libs/mdui/1.0.2/js/mdui.min.js"></script>
+    </head>
+
+    <body>
+        <div class="mdui-appbar">
+            <div class="mdui-toolbar mdui-color-indigo">
+                <p class="mdui-btn mdui-btn-icon"><i class="mdui-icon material-icons">&#xe0b7;</i></p>
+                <p class="mdui-typo-title">Bing Chat</p>
+                <div class="mdui-toolbar-spacer"></div>
+                <a href="javascript:location.reload(true);" class="mdui-btn mdui-btn-icon">
+                    <i class="mdui-icon material-icons">&#xe5d5;</i>
+                </a>
+            </div>
+        </div>
+        
+        <div class="mdui-card" style="height: 300px; overflow-y: scroll;">
+            <div id="msg" class="mdui-card-content">
+                
+            </div>
+        </div>
+
+        <div class="mdui-textfield mdui-textfield-floating-label">
+            <label class="mdui-textfield-label">请输入内容</label>
+            <input class="mdui-textfield-input" type="text" id="input"/>
+            <button class="mdui-btn mdui-btn-raised mdui-ripple mdui-color-theme-accent" id="send">发送</button>
+        </div>
+
+        <script type="text/javascript">
+            const WS = new WebSocket('ws://127.0.0.1:5000');
+            
+            WS.onopen = function() {
+                console.log('连接成功');
+                mdui.snackbar({
+                    message: '连接成功',
+                    position: 'right-top'
+                });
+            }
+
+            WS.onclose = function() {
+                console.log('断开连接');
+                mdui.snackbar({
+                    message: '连接已断开',
+                    position: 'right-top'
+                });
+            }
+
+            window.onbeforeunload = function() {
+                WS.close();
+            }
+
+            WS.onmessage = function(e) {
+                document.getElementById('send').disabled = false;
+                let data = JSON.parse(e.data);
+                let content = document.getElementById('msg');
+                let div = document.createElement('div');
+                if (data['code'] == 200) {
+                    div.innerHTML = '服务端：'+ data['data'];
+                } else {
+                    div.innerHTML = '服务端：'+ data['message'];
+                }
+                content.appendChild(div);
+            }
+
+            document.getElementById('send').onclick = function() {
+                
+                if (WS.readyState != 1) {
+                    mdui.snackbar({
+                        message: '连接已断开',
+                        position: 'right-top'
+                    });
+                    return;
+                }
+                let input = document.getElementById('input');
+                let content = input.value;
+                if (content == '') {
+                    mdui.snackbar({
+                        message: '请输入内容',
+                        position: 'right-top'
+                    });
+                    return;
+                }
+
+                let div = document.createElement('div');
+                div.innerHTML = '我：'+content;
+                document.getElementById('msg').appendChild(div);
+
+                WS.send(content);
+                input.value = '';
+                document.getElementById('send').disabled = true;
+            }
+        </script>
+    </body>
+</html>
