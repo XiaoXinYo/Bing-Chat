@@ -12,4 +12,5 @@ Bing Chat服务端,通过WebSocket实现通讯.
 ## 配置
 WebSocket地址和端口分别在第10行和第11行.
 ## emm
-页面写的有点丑，有能力的大神，可以pull request一下.
+1. 页面写的有点丑，有能力的大神，可以pull request一下.
+2. 搭建好建议不要对外开放，因为目前Bing Chat24小时内有次数限制.
