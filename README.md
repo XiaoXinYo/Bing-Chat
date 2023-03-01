@@ -22,6 +22,7 @@ message|消息
 data|数据
 text|文本
 links|链接
+
 注: API版的请求参数为message.
 ## emm
 1. 页面写的有点丑，有能力的大神，可以pull request一下，如果你有的example也可以提交.
