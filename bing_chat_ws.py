@@ -17,19 +17,19 @@ class GenerateResponseResult:
     def _json(self):
         return json.dumps(self.result, ensure_ascii=False)
 
-    def error(self, code, message):
-        result = {
-            'code': code,
-            'message': message
-        }
-        self.result = result
-        return self._json()
-
     def success(self, data):
         result = {
             'code': 200,
             'message': 'success',
             'data': data
+        }
+        self.result = result
+        return self._json()
+    
+    def error(self, code, message):
+        result = {
+            'code': code,
+            'message': message
         }
         self.result = result
         return self._json()
@@ -40,23 +40,34 @@ async def handle(ws):
         try:
             message = await ws.recv()
             data = await chatBot.ask(message)
-
+            
             if data.get('item').get('result').get('value') == 'Throttled':
-                result = GenerateResponseResult().error(120, '已上限,24小时后尝试')
-                await ws.send(result)
+                await ws.send(GenerateResponseResult().error(120, '已上限,24小时后尝试'))
                 break
             
+            info = {
+                'text': '',
+                'urls': []
+            }
             messages = data.get('item').get('messages')
             if len(messages) == 1 or 'New topic' in json.dumps(messages):
                 await chatBot.reset()
                 data = await chatBot.ask(message)
                 messages = data.get('item').get('messages')
-            data = messages[1].get('text')
-            data = re.sub(r'\[\^.*?\^]', '', data)
-            result = GenerateResponseResult().success(data)
+            else:
+                sourceAttributions = messages[1].get('sourceAttributions')
+                if sourceAttributions:
+                    for sourceAttribution in sourceAttributions:
+                        info['urls'].append({
+                            'title': sourceAttribution.get('providerDisplayName'),
+                            'url': sourceAttribution.get('seeMoreUrl')
+                        })
+            text = messages[1].get('text')
+            text = re.sub(r'\[\^.*?\^]', '', text)
+            info['text'] = text
+            await ws.send(GenerateResponseResult().success(info))
         except Exception:
-            result = GenerateResponseResult().error(500, '未知错误')
-        await ws.send(result)
+            await ws.send(GenerateResponseResult().error(500, '未知错误'))
 
 async def app(ws):
     while True:
