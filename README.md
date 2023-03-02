@@ -21,6 +21,6 @@ data|数据
 text|文本
 links|链接
 ## emm
-1. 页面写的有点丑，有能力的大神，可以pull request一下，如果你有的example也可以提交.感谢[MorFansLab](https://github.com/MorFansLab/LiteWebChat_Frame)
+1. 页面写的有点丑，感谢[MorFansLab](https://github.com/MorFansLab/LiteWebChat_Frame)
 3. 搭建好建议不要对外开放，因为目前Bing Chat24小时内有次数限制.
 4. 至于反应快慢的问题，要看回答文本的长度，如果文本长度过长，回复时间会比较长.
