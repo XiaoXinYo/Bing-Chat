@@ -49,15 +49,23 @@ class GenerateResponse:
         self.onlyJSON = onlyJSON
         return self._json()
 
-def getrequestParameter(request):
+async def getrequestParameter(request: Request):
     data = {}
     if request.method == 'GET':
         data = request.query_params
     elif request.method == 'POST':
-        data = request.form()
+        data = await request.form()
         if not data:
-            data = request.json()
+            data = await request.json()
     return dict(data)
+
+@APP.exception_handler(500)
+def error500(request, exc):
+    return GenerateResponse().error(500, '未知错误')
+
+@APP.exception_handler(404)
+def error404(request, exc):
+    return GenerateResponse().error(404, '未找到文件')
 
 @APP.websocket('/ws')
 @APP.route('/api', methods=['GET', 'POST'])
@@ -65,7 +73,7 @@ async def ws(request: Request=None, ws: WebSocket=None):
     if ws:
         await ws.accept()
     else:
-        message = getrequestParameter(request).get('message')
+        message = (await getrequestParameter(request)).get('message')
         if not message:
             return GenerateResponse().error(110, '参数错误')
     
@@ -102,7 +110,6 @@ async def ws(request: Request=None, ws: WebSocket=None):
             text = messages[1].get('text')
             text = re.sub(r'\[\^.*?\^]', '', text)
             info['text'] = text
-
             if ws:
                 await ws.send_text(GenerateResponse().success(info, True))
             else:
