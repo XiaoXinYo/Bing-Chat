@@ -3,7 +3,7 @@ Bing Chat服务端,通过API/WebSocket实现通讯.
 ## 需求
 1. 语言: Python.
 2. 包:  
-   API版: gevent,flask,flask_cors,EdgeGPT.  
+   API版: gevent,flask,flask_cors,flask[async],EdgeGPT.  
    WebSocket版: asyncio,websockets,EdgeGPT.
 3. 其他: New Bing账户.
 ## 使用

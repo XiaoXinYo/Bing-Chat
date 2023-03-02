@@ -53,11 +53,11 @@ def getRequestParameter(request):
 
 @APP.errorhandler(404)
 def errorhandler_404(error):
-    return GenerateResponseResult.error(404, '未找到文件')
+    return GenerateResponseResult().error(404, '未找到文件')
 
 @APP.errorhandler(500)
 def errorhandler_500(error):
-    return GenerateResponseResult.error(500, '未知错误')
+    return GenerateResponseResult().error(500, '未知错误')
 
 @APP.route('/', methods=['GET', 'POST'])
 async def index():
