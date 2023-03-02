@@ -1,0 +1,489 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <meta charset="utf-8" />
+  <title>Bing Chat</title>
+  <meta name="keywords" content="Bing Chat" />
+  <meta name="description" content="Bing Chat." />
+  <meta name="viewport" content="width=device-width,initial-scale=1,minimum-scale=1,maximum-scale=1,user-scalable=no" />
+  <link rel="stylesheet" href="https://unpkg.com/normalize.css@8.0.1/normalize.css" />
+
+  <!--<link -->
+  <!--   rel="stylesheet" -->
+  <!--   href="//unpkg.com/@highlightjs/cdn-assets@11.7.0/styles/default.min.css" -->
+  <!-- /> -->
+  <!-- <script src="//unpkg.com/@highlightjs/cdn-assets@11.7.0/highlight.min.js"></script> -->
+  <style>
+    html {
+      transition: background 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    html.dark {
+      background: #18181c;
+    }
+
+    .chatbox p {
+      margin: 0;
+    }
+
+  </style>
+</head>
+
+<body>
+  <script>
+    (function () {
+      const prefersDark =
+        window.matchMedia &&
+        window.matchMedia("(prefers-color-scheme: dark)").matches;
+      const setting = localStorage.getItem("vueuse-color-scheme") || "auto";
+      if (setting === "dark" || (prefersDark && setting !== "light"))
+        document.documentElement.classList.toggle("dark", true);
+    })();
+  </script>
+  <div id="app">
+    <style>
+      .loadingBox {
+        display: grid;
+        place-items: center;
+        height: 100vh;
+      }
+
+      .fulfilling-square-spinner,
+      .fulfilling-square-spinner * {
+        box-sizing: border-box;
+      }
+
+      .fulfilling-square-spinner {
+        height: 150px;
+        width: 150px;
+        position: relative;
+        border: 4px solid #ff1d5e;
+        animation: fulfilling-square-spinner-animation 4s infinite ease;
+      }
+
+      .fulfilling-square-spinner .spinner-inner {
+        vertical-align: top;
+        display: inline-block;
+        background-color: #ff1d5e;
+        width: 100%;
+        opacity: 1;
+        animation: fulfilling-square-spinner-inner-animation 4s infinite ease-in;
+      }
+
+      @keyframes fulfilling-square-spinner-animation {
+        0% {
+          transform: rotate(0deg);
+        }
+
+        25% {
+          transform: rotate(180deg);
+        }
+
+        50% {
+          transform: rotate(180deg);
+        }
+
+        75% {
+          transform: rotate(360deg);
+        }
+
+        100% {
+          transform: rotate(360deg);
+        }
+      }
+
+      @keyframes fulfilling-square-spinner-inner-animation {
+        0% {
+          height: 0%;
+        }
+
+        25% {
+          height: 0%;
+        }
+
+        50% {
+          height: 100%;
+        }
+
+        75% {
+          height: 100%;
+        }
+
+        100% {
+          height: 0%;
+        }
+      }
+
+    </style>
+    <div class="loadingBox">
+      <div class="fulfilling-square-spinner">
+        <div class="spinner-inner"></div>
+      </div>
+    </div>
+  </div>
+  <script src="https://unpkg.com/vue"></script>
+  <script src="https://unpkg.com/naive-ui"></script>
+  <script src="https://unpkg.com/@vueuse/shared"></script>
+  <script src="https://unpkg.com/@vueuse/core"></script>
+  <script src="https://unpkg.com/iconify-icon@1.0.7/dist/iconify-icon.min.js"></script>
+  <script src="https://unpkg.com/@unocss/runtime@0.50.3/attributify.global.js"></script>
+  <script defer src="https://unpkg.com/marked@4.2.12/marked.min.js"></script>
+  <script>
+    const { h, ref, defineComponent, computed, onMounted, watch, nextTick } =
+      Vue;
+    const { createDiscreteApi, darkTheme, useMessage, lightTheme, NCode } =
+      naive;
+    const {
+      useDark,
+      useToggle,
+      useStorage,
+      useWebSocket,
+      useWindowSize,
+      useScroll,
+      useDebounceFn,
+      useClipboard,
+    } = VueUse;
+
+    // 主题控制
+    const isDark = useDark(true);
+    const toggleDark = useToggle(isDark);
+
+    // 消息列表
+    // const msgList = useStorage("msgList", []);
+    const msgList = ref([]);
+
+    // 输入控制
+    const generateStatus = ref(false);
+    const toggleGStatus = (val) => (generateStatus.value = val);
+    const queryTxt = ref("");
+
+    /**
+     * 生成消息
+     * socketStatus 连接状态
+     * send 发送消息
+     * open 打开连接
+     * socketData 接收的消息
+     */
+    const {
+      status: socketStatus,
+      send,
+      open,
+      data: socketData,
+    } = useWebSocket("ws://127.0.0.1:5000");
+    const reload = () => {
+      open();
+      toggleGStatus(false);
+    };
+
+    function generateMsg(msg, type = "user", time = Date.now()) {
+      return {
+        msg,
+        type,
+        time,
+      };
+    }
+
+    function getSocketMsg(msg) {
+      if (!msg) return;
+      const { code, data, message } = JSON.parse(msg);
+      if (code === 200) {
+        msgList.value.push(generateMsg(data, "bing-gpt"));
+      } else {
+        msgList.value.push(generateMsg(message, "bing-gpt"));
+      }
+      toggleGStatus(false);
+    }
+    watch(socketData, getSocketMsg, { immediate: true });
+
+    //展示代码
+    const codeBox = defineComponent({
+      props: ["cls", "code"],
+      setup(props) {
+        const { cls, code } = props;
+        const { copy, copied } = useClipboard();
+        const codeEl = ref(null);
+
+        return () =>
+          h("div", {}, [
+            h(
+              "div",
+              {
+                class:
+                  "px-10px py-7px bg-zinc-7 justify-between text-white flex items-center",
+              },
+              [
+                h("span", { class: "block overflow-hidden flex" }, cls),
+                copied.value
+                  ? h("span", "copied!")
+                  : h(
+                    "label",
+                    {
+                      class: "cursor-pointer h-20px",
+                      title: "copy code",
+                      onClick: () => {
+                        copy(codeEl.value.innerText);
+                        copied.value = true;
+                      },
+                    },
+                    [
+                      h("iconify-icon", {
+                        class: "",
+                        icon: "basil:copy-solid",
+                        width: "20",
+                      }),
+                    ]
+                  ),
+              ]
+            ),
+            // NOTE: 需要html符号转义的方法
+            // h(NCode, {
+            //   language,
+            //   code,
+            // }),
+            h("div", {
+              class: "ws-pre-wrap px-10px pb-7px pt-5px",
+              style: "white-space:pre-wrap",
+              ref: codeEl,
+              innerHTML: code,
+            }),
+          ]);
+      },
+    });
+
+    // 消息展示区域
+    const textBox = defineComponent({
+      props: ["text"],
+      setup(props) {
+        const { text } = props;
+
+        const mdTxt = marked.parse(text);
+        const codeReg = /<code>(.*?)<\/code>/g;
+        const preTag =
+          "<pre bg-zinc-1 dark:bg-dark-3 rd-10px overflow-hidden>";
+        const codeTxt = mdTxt
+          .replace(/<pre>/g, preTag)
+          .replace(codeReg, (match, p1) => {
+            return `${preTag}${match}</pre>`;
+          });
+
+        function parse(htmlStr) {
+          const tagRegex = /<([a-zA-Z]+)([^>]*)>([\s\S]*?)<\/\1>/g;
+          const matches = [...htmlStr.matchAll(tagRegex)];
+          if (!matches.length) return htmlStr;
+          return matches.map((match) => {
+            const [fullMatch, tagName, attrs, innerHTML] = match;
+            const cls = attrs
+              .trim()
+              .split(/\s+/)
+              .reduce((acc, attr) => {
+                const [name, value] = attr.split("=");
+                const str =
+                  name == "class" ? value.replaceAll('"', "") : name;
+                acc += " " + str;
+                return acc;
+              }, "");
+
+            const children = innerHTML ? parse(innerHTML) : null;
+            if (tagName == "code") {
+              return h(codeBox, {
+                cls,
+                code: children,
+              });
+            }
+            return h(tagName, { class: cls }, children);
+          });
+        }
+        return () => {
+          return parse(codeTxt);
+        };
+      },
+    });
+
+    // 聊天框盒子
+    const chatbox = defineComponent({
+      props: ["msg"],
+      components: { textBox },
+      setup(props) {
+        const { msg, type } = props.msg;
+
+        const isUser = type == "user";
+        const containerCls = `justify-${isUser ? "end" : "start"}`;
+        const boxCls = isUser
+          ? "bg-green-4 dark:bg-green-7 text-white animate-bounce-in-right"
+          : "bg-light-1 dark:bg-dark-1 animate-bounce-in-left";
+
+        return {
+          containerCls,
+          boxCls,
+          msg,
+        };
+      },
+      template: `
+        <div w-full flex :class="containerCls">
+          <div class="chatbox" transition-transform max-w="60%" px-25px>
+          <div  shadow border="1px solid gray-2" dark:border-color-black px-15px py-10px :class="boxCls" rd-25px border-box >
+            <textBox :text="msg"/>
+          </div>
+          </div>
+        </div>
+        `,
+    });
+
+    // 输入框
+    const inputbox = defineComponent({
+      setup() {
+        const icon = computed(() =>
+          generateStatus.value
+            ? "line-md:uploading-loop"
+            : "grommet-icons:send"
+        );
+
+        const sendMsg = (e) => {
+          e.preventDefault();
+
+          if (
+            socketStatus.value !== "OPEN" ||
+            !queryTxt.value ||
+            generateStatus.value
+          )
+            return;
+
+          send(queryTxt.value);
+          msgList.value.push(generateMsg(queryTxt.value));
+          queryTxt.value = "";
+          toggleGStatus(true);
+        };
+
+        return {
+          icon,
+          toggleGStatus,
+          queryTxt,
+          sendMsg,
+        };
+      },
+      template: `
+        <div z-99 fixed bottom-120px w-full h-25px ></div>
+        <div z-99 animate-bounce-in h-80px fixed bottom-10 w-full flex justify-center>
+          <div animate-head-shake w="80%">
+            <n-input placeholder='' v-model:value="queryTxt" :autosize="{minRows:3,maxRows:3}"
+              @keydown.enter="sendMsg" round type="textarea">
+            <template #suffix>
+              <div p="10px" grid place-items-center cursor-pointer>
+              <iconify-icon color-truegray-5 width="30" :icon="icon" @click="sendMsg"></iconify-icon>
+              </div>
+            </template>
+          </n-input>
+          </div>
+        </div>
+      `,
+    });
+
+    // 主要内容
+    const content = defineComponent({
+      components: {
+        chatbox,
+        inputbox,
+      },
+      setup() {
+        const themeIcon = computed(() =>
+          isDark.value
+            ? "line-md:moon-rising-twotone-loop"
+            : "line-md:moon-to-sunny-outline-loop-transition"
+        );
+        const connectIcon = computed(() =>
+          socketStatus.value === "OPEN"
+            ? "fluent:plug-connected-checkmark-20-filled"
+            : "tabler:plug-connected-x"
+        );
+        const connectColor = computed(() =>
+          socketStatus.value === "OPEN" ? "color-green-4" : "color-red-5"
+        );
+
+        const { height } = useWindowSize();
+        const scollBoxH = computed(() => height.value - 185);
+
+        const scrollEl = ref(null);
+        const { y } = useScroll(scrollEl, { behavior: "smooth" });
+
+        const scrollToB = useDebounceFn(() =>
+          nextTick(() => {
+            y.value = scrollEl.value.scrollbarInstRef.contentRef.scrollHeight;
+          })
+        );
+
+        watch(
+          msgList,
+          () => {
+            scrollToB();
+          },
+          { immediate: true }
+        );
+
+        watch(generateStatus, (v) => {
+          v && scrollToB();
+        });
+
+        return {
+          msgList,
+          toggleDark,
+          themeIcon,
+          connectIcon,
+          connectColor,
+          scollBoxH,
+          scrollEl,
+          generateStatus,
+        };
+      },
+      template: `
+         <iconify-icon cursor-pointer fixed top-5 right="5%" width="39" color-orange-4
+            dark:color-amber-3 @click="toggleDark()" :icon="themeIcon" />
+          <div fixed top-5 right="5%" translate-x--80px flex items-center h-40px>
+            <span class="text-xs text-gray-500 dark:text-gray-400">连接状态：</span>
+            <iconify-icon :class="connectColor" width="25" :icon="connectIcon" />
+          </div>
+         <inputbox />
+         <n-scrollbar ref="scrollEl" :style="'max-height: '+scollBoxH + 'px'" mt-60px trigger="none">
+           <n-list :show-divider="false">
+             <n-list-item v-for="(msg,i) in msgList" :key="i" >
+              <chatbox :msg="msg" />
+             </n-list-item>
+             <div w-full h-20px></div>
+           </n-list>
+           <div v-if="generateStatus" pl-20px dark:color-white>
+             <iconify-icon width="155" icon="eos-icons:three-dots-loading" />
+           </div>
+         </n-scrollbar>
+      `,
+    });
+
+    const App = {
+      setup() {
+        const theme = computed(() => (isDark.value ? darkTheme : lightTheme));
+
+        return {
+          isDark,
+          theme,
+          hljs: window.hljs,
+        };
+      },
+      template: `
+        <n-config-provider :theme="theme">
+          <n-message-provider>
+            <content></content>
+          </n-message-provider>
+        </n-config-provider>
+        `,
+    };
+
+    const app = Vue.createApp(App);
+    app.component("content", content);
+    app.use(naive);
+
+    setTimeout(() => {
+      app.mount("#app");
+    }, 1000);
+  </script>
+</body>
+
+</html>
