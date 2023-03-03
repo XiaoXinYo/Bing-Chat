@@ -63,7 +63,7 @@
                 let content = document.getElementById('msg');
                 let div = document.createElement('div');
                 if (data['code'] == 200) {
-                    div.innerHTML = '服务端：'+ data['data']['text'];
+                    div.innerHTML = '服务端：'+ data['data']['answer'];
                 } else {
                     div.innerHTML = '服务端：'+ data['message'];
                 }

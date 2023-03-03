@@ -67,37 +67,38 @@ def error500(request, exc):
 def error404(request, exc):
     return GenerateResponse().error(404, '未找到文件')
 
-@APP.websocket('/ws')
 @APP.route('/api', methods=['GET', 'POST'])
+@APP.websocket('/ws')
 async def ws(request: Request=None, ws: WebSocket=None):
     if ws:
         await ws.accept()
     else:
-        message = (await getrequestParameter(request)).get('message')
-        if not message:
+        question = (await getrequestParameter(request)).get('question')
+        if not question:
             return GenerateResponse().error(110, '参数错误')
     
-    chatBot = EdgeGPT.Chatbot(cookiePath='./cookie.json')
+    chatBot = EdgeGPT.Chatbot('./cookie.json')
+
     while True:
         try:
             if ws:
-                message = await ws.receive_text()
-            data = await chatBot.ask(message)
+                question = await ws.receive_text()
+            data = await chatBot.ask(question)
             
             if data.get('item').get('result').get('value') == 'Throttled':
                 if ws:
                     await ws.send_text(GenerateResponse().error(120, '已上限,24小时后尝试', True))
-                    break
+                    continue
                 return GenerateResponse().error(120, '已上限,24小时后尝试')
             
             info = {
-                'text': '',
+                'answer': '',
                 'urls': []
             }
             messages = data.get('item').get('messages')
             if len(messages) == 1 or 'New topic' in json.dumps(messages):
                 await chatBot.reset()
-                data = await chatBot.ask(message)
+                data = await chatBot.ask(question)
                 messages = data.get('item').get('messages')
             else:
                 sourceAttributions = messages[1].get('sourceAttributions')
@@ -107,9 +108,9 @@ async def ws(request: Request=None, ws: WebSocket=None):
                             'title': sourceAttribution.get('providerDisplayName'),
                             'url': sourceAttribution.get('seeMoreUrl')
                         })
-            text = messages[1].get('text')
-            text = re.sub(r'\[\^.*?\^]', '', text)
-            info['text'] = text
+            answer = messages[1].get('text')
+            answer = re.sub(r'\[\^.*?\^]', '', answer)
+            info['answer'] = answer
             if ws:
                 await ws.send_text(GenerateResponse().success(info, True))
             else:
