@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="zh">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="height=device-height, initial-scale=1.0">
+  <meta http-equiv="X-UA-Compatible" content="ie=edge">
+  <link href="../images/favicon.ico" rel="icon">
+  <title>EdgeGPT by Chookyin</title>
+  <link rel="stylesheet" type="text/css" href="../css/litewebchat.min.css">
+  <link rel="stylesheet" type="text/css" href="../css/litewebchat_input.min.css">
+  <script type="text/javascript" src="https://cdn.bootcdn.net/ajax/libs/mdui/1.0.2/js/mdui.min.js"></script>
+  <style>
+    /* 全局 */
+    html,
+    body {
+      height: 100%;
+      margin: 0;
+      padding: 0;
+      overflow: hidden;
+    }
+
+    .lite-chatmaster {
+      height: 100%;
+      width: 100%;
+    }
+  </style>
+</head>
+
+<body><!-- 主容器 -->
+  <div class="lite-chatmaster">
+    <div class="lite-chatbox" id="messagesdiv"><!-- cleft 左 -->
+      <div class="cleft cmsg"><img class="headIcon radius" ondragstart="return false;" oncontextmenu="return false;"
+          src="../images/bing2.png"><span class="name"><span>EdgeGPT</span></span><span class="content">欢迎回来! 你想要讨论什么?</span>
+      </div><!-- cright 右 -->
+    </div>
+    <div class="lite-chatinput">
+      <hr class="boundary">
+      <div class="editor chatinput" aria-label="input area" contenteditable="true" ref="editor" id="editor"></div>
+      <button class="send" id="send">发送</button>
+    </div>
+  </div>
+  <script src="../js/websocket.js"></script>
+</body>
+
+</html>
