@@ -1,4 +1,4 @@
-const WS = new WebSocket('ws://127.0.0.1:5000/ws');//使用https时需要wss协议，使用http仅需要ws协议
+const WS = new WebSocket('wss://你的域名/ws');//使用https时需要wss，使用http仅需要ws
 
 WS.onopen = function () {
     console.log('连接成功');
@@ -26,7 +26,7 @@ WS.onmessage = function (e) {
     let content = document.getElementById('editor');
     let div = document.createElement('div');
     if (data['code'] == 200) {
-        div.innerHTML = "<div class='cleft cmsg'><img class='headIcon radius' ondragstart='return false;' oncontextmenu='return false;'src='../images/bing2.png'><span class='name'><span>EdgeGPT</span></span><span class='content'>" + data['data']['answer'] + "</span></div>";
+        div.innerHTML = "<div class='cleft cmsg'><img class='headIcon radius' ondragstart='return false;' oncontextmenu='return false;'src='../images/bing2.png'><span class='name'><span>EdgeGPT</span></span><span class='content'>" + data['data']['text'] + "</span></div>";
     } else {
         div.innerHTML = "<div class='cleft cmsg'><img class='headIcon radius' ondragstart='return false;' oncontextmenu='return false;'src='../images/bing2.png'><span class='name'><span>EdgeGPT</span></span><span class='content'>" + data['message'] + "</span></div>";
     }

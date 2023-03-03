@@ -189,7 +189,7 @@
       if (!msg) return;
       const { code, data, message } = JSON.parse(msg);
       if (code === 200) {
-        msgList.value.push(generateMsg(data && data.answer, "bing-gpt", data.urls));
+        msgList.value.push(generateMsg(data && data.text, "bing-gpt", data.urls));
       } else {
         msgList.value.push(generateMsg(message, "bing-gpt"));
       }

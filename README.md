@@ -9,7 +9,7 @@ Bing Chat服务端,通过WebSocket/API实现通讯.
 2. 在[https://www.bing.com/chat](https://www.bing.com/chat)页面中点击扩展.
 3. 点击扩展右下角的Export,将复制的内容粘贴到cookie.json.
 4. 运行bing_chat.py.
-5. WebSocket连接/ws,API请求/api(请求参数为question).
+5. WebSocket连接/ws,API请求/api(请求参数为message).
 ## 配置
 地址和端口分别在第11行和第12行.
 ## 响应参数
@@ -18,7 +18,7 @@ Bing Chat服务端,通过WebSocket/API实现通讯.
 code|状态码
 message|消息
 data|数据
-answer|答复
+text|文本
 links|链接
 ## emm
 1. 页面写的有点丑，有能力的大神，可以pull request一下，如果你有的example也可以提交.
