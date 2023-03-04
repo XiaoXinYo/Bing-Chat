@@ -82,7 +82,8 @@ async def wsStream(ws: WebSocket=None):
                 if not final:
                     answer = data[index:]
                     index = len(data)
-                    answer = re.sub(r'\[.*?\]', '', answer)
+                    #answer = re.sub(r'\[.*?\]', '', answer)
+                    answer = re.sub(r'\[\^.*?\^]', '', answer)
                     if answer:
                         await ws.send_text(GenerateResponse().success({
                             'answer': answer,

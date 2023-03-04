@@ -59,16 +59,17 @@
             }
 
             WS.onmessage = function(e) {
-                document.getElementById('send').disabled = false;
                 let data = JSON.parse(e.data);
                 if (data['code'] == 200) {
                     if (data.data.done === false) {
                         TEXT_DIV.innerHTML += data['data']['answer'];
+                    } else {
+                        document.getElementById('send').disabled = false;
                     }
                 } else {
-                    TEXT_DIV.innerHTML = '服务端：'+ data['message'];
+                    TEXT_DIV.innerHTML += data['message'];
+                    document.getElementById('send').disabled = false;
                 }
-
             }
 
             document.getElementById('send').onclick = function() {
