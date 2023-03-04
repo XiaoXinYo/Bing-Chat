@@ -19,33 +19,32 @@ APP.add_middleware(
     allow_methods=['*'],
     allow_headers=['*'],
 )
+ERROR_ANSWER = ['I’m still learning', '我还在学习']
 
 class GenerateResponse:
     def __init__(self):
         pass
     
     def _json(self):
-        resultJSON = json.dumps(self.result, ensure_ascii=False)
+        responseJSON = json.dumps(self.response, ensure_ascii=False)
         if self.onlyJSON:
-            return resultJSON
-        return Response(resultJSON, media_type='application/json')
+            return responseJSON
+        return Response(responseJSON, media_type='application/json')
+
+    def error(self, code, message, onlyJSON=False):
+        self.response = {
+            'code': code,
+            'message': message
+        }
+        self.onlyJSON = onlyJSON
+        return self._json()
 
     def success(self, data, onlyJSON=False):
-        result = {
+        self.response = {
             'code': 200,
             'message': 'success',
             'data': data
         }
-        self.result = result
-        self.onlyJSON = onlyJSON
-        return self._json()
-
-    def error(self, code, message, onlyJSON=False):
-        result = {
-            'code': code,
-            'message': message
-        }
-        self.result = result
         self.onlyJSON = onlyJSON
         return self._json()
 
@@ -59,64 +58,125 @@ async def getrequestParameter(request: Request):
             data = await request.json()
     return dict(data)
 
-@APP.exception_handler(500)
-def error500(request, exc):
-    return GenerateResponse().error(500, '未知错误')
-
 @APP.exception_handler(404)
 def error404(request, exc):
     return GenerateResponse().error(404, '未找到文件')
 
-@APP.websocket('/ws')
+@APP.exception_handler(500)
+def error500(request, exc):
+    return GenerateResponse().error(500, '未知错误')
+
+@APP.websocket('/ws_stream')
+async def wsStream(ws: WebSocket=None):
+    await ws.accept()
+
+    chatBot = EdgeGPT.Chatbot('./cookie.json')
+    while True:
+        try:
+            question = await ws.receive_text()
+            if not question:
+                await ws.send_text(GenerateResponse().error(110, '参数错误'))
+            
+            index = 0
+            async for final, data in chatBot.ask_stream(question):
+                if not final:
+                    answer = data[index:]
+                    index = len(data)
+                    answer = re.sub(r'\[.*?\]', '', answer)
+                    if answer:
+                        await ws.send_text(GenerateResponse().success({
+                            'answer': answer,
+                            'urls': [],
+                            'done': False
+                        }, True))
+                else:
+                    if data.get('item').get('result').get('value') == 'Throttled':
+                        await ws.send_text(GenerateResponse().error(120, '已上限,24小时后尝试', True))
+                        continue
+                    
+                    info = {
+                        'answer': '',
+                        'urls': [],
+                        'done': True
+                    }
+                    messages = data.get('item').get('messages')
+                    sourceAttributions = messages[1].get('sourceAttributions')
+                    if sourceAttributions:
+                        for sourceAttribution in sourceAttributions:
+                            info['urls'].append({
+                                'title': sourceAttribution.get('providerDisplayName'),
+                                'url': sourceAttribution.get('seeMoreUrl')
+                            })
+                    answer = messages[1].get('text')
+                    answer = re.sub(r'\[\^.*?\^]', '', answer)
+                    info['answer'] = answer
+                    await ws.send_text(GenerateResponse().success(info, True))
+
+                    maxTimes = data.get('item').get('throttling').get('maxNumUserMessagesInConversation')
+                    nowTimes = data.get('item').get('throttling').get('numUserMessagesInConversation')
+                    if [errorAnswer for errorAnswer in ERROR_ANSWER if errorAnswer in answer]:
+                        await chatBot.reset()
+                    elif nowTimes == maxTimes:
+                        await chatBot.reset()
+        except Exception:
+            await ws.send_text(GenerateResponse().error(500, '未知错误', True))
+            await chatBot.reset()
+
 @APP.route('/api', methods=['GET', 'POST'])
+@APP.websocket('/ws')
 async def ws(request: Request=None, ws: WebSocket=None):
     if ws:
         await ws.accept()
     else:
-        message = (await getrequestParameter(request)).get('message')
-        if not message:
+        question = (await getrequestParameter(request)).get('question')
+        if not question:
             return GenerateResponse().error(110, '参数错误')
     
-    chatBot = EdgeGPT.Chatbot(cookiePath='./cookie.json')
+    chatBot = EdgeGPT.Chatbot('./cookie.json')
     while True:
         try:
             if ws:
-                message = await ws.receive_text()
-            data = await chatBot.ask(message)
+                question = await ws.receive_text()
+                if not question:
+                    await ws.send_text(GenerateResponse().error(110, '参数错误'))
+            data = await chatBot.ask(question)
             
             if data.get('item').get('result').get('value') == 'Throttled':
                 if ws:
                     await ws.send_text(GenerateResponse().error(120, '已上限,24小时后尝试', True))
-                    break
+                    continue
                 return GenerateResponse().error(120, '已上限,24小时后尝试')
-            
+
             info = {
-                'text': '',
+                'answer': '',
                 'urls': []
             }
             messages = data.get('item').get('messages')
-            if len(messages) == 1 or 'New topic' in json.dumps(messages):
-                await chatBot.reset()
-                data = await chatBot.ask(message)
-                messages = data.get('item').get('messages')
-            else:
-                sourceAttributions = messages[1].get('sourceAttributions')
-                if sourceAttributions:
-                    for sourceAttribution in sourceAttributions:
-                        info['urls'].append({
-                            'title': sourceAttribution.get('providerDisplayName'),
-                            'url': sourceAttribution.get('seeMoreUrl')
-                        })
-            text = messages[1].get('text')
-            text = re.sub(r'\[\^.*?\^]', '', text)
-            info['text'] = text
+            sourceAttributions = messages[1].get('sourceAttributions')
+            if sourceAttributions:
+                for sourceAttribution in sourceAttributions:
+                    info['urls'].append({
+                        'title': sourceAttribution.get('providerDisplayName'),
+                        'url': sourceAttribution.get('seeMoreUrl')
+                    })
+            answer = messages[1].get('text')
+            answer = re.sub(r'\[\^.*?\^]', '', answer)
+            info['answer'] = answer
             if ws:
                 await ws.send_text(GenerateResponse().success(info, True))
+
+                maxTimes = data.get('item').get('throttling').get('maxNumUserMessagesInConversation')
+                nowTimes = data.get('item').get('throttling').get('numUserMessagesInConversation')
+                if [errorAnswer for errorAnswer in ERROR_ANSWER if errorAnswer in answer]:
+                    await chatBot.reset()
+                elif nowTimes == maxTimes:
+                    await chatBot.reset()
             else:
                 return GenerateResponse().success(info)
         except Exception:
             if ws:
                 await ws.send_text(GenerateResponse().error(500, '未知错误', True))
+                await chatBot.reset()
             else:
                 return GenerateResponse().error(500, '未知错误')
 

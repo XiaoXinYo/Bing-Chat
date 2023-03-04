@@ -35,7 +35,8 @@
         </div>
 
         <script type="text/javascript">
-            const WS = new WebSocket('ws://127.0.0.1:5000/ws');
+            const WS = new WebSocket('ws://127.0.0.1:5000/ws_stream');
+            let TEXT_DIV = null;
             
             WS.onopen = function() {
                 console.log('连接成功');
@@ -60,14 +61,14 @@
             WS.onmessage = function(e) {
                 document.getElementById('send').disabled = false;
                 let data = JSON.parse(e.data);
-                let content = document.getElementById('msg');
-                let div = document.createElement('div');
                 if (data['code'] == 200) {
-                    div.innerHTML = '服务端：'+ data['data']['text'];
+                    if (data.data.done === false) {
+                        TEXT_DIV.innerHTML += data['data']['answer'];
+                    }
                 } else {
-                    div.innerHTML = '服务端：'+ data['message'];
+                    TEXT_DIV.innerHTML = '服务端：'+ data['message'];
                 }
-                content.appendChild(div);
+
             }
 
             document.getElementById('send').onclick = function() {
@@ -92,6 +93,10 @@
                 let div = document.createElement('div');
                 div.innerHTML = '我：'+content;
                 document.getElementById('msg').appendChild(div);
+
+                TEXT_DIV = document.createElement('div');
+                document.getElementById('msg').appendChild(TEXT_DIV);
+                TEXT_DIV.innerHTML += '服务端：';
 
                 WS.send(content);
                 input.value = '';
