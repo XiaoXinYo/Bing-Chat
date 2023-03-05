@@ -17,6 +17,7 @@ Bing Chat服务端,通过WebSocket/API实现通讯.
 ---|---|---
 style|是|风格,balanced代表平衡,creative代表创造,precise代表精确
 question|是|问题
+
 注:WebSocket发送需JSON格式.
 ### 响应
 名称|中文名|说明
