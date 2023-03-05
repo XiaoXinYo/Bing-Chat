@@ -1,4 +1,4 @@
 fastapi
 uvicorn
 python-multipart
-EdgeGPT
+EdgeGPT >= 0.0.55

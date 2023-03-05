@@ -33,8 +33,21 @@ WS.onmessage = function (e) {
         } else {
             document.getElementById('send').disabled = false;
         }
+
+        if (data['data']['reset']) {
+            let answerDiv = document.createElement('div');
+            answerDiv.innerHTML = "<div class='cleft cmsg'><img class='headIcon radius' ondragstart='return false;' oncontextmenu='return false;'src='../images/bing2.png'><span class='name'><span>EdgeGPT</span></span><span class='content'>对话已被重置</span></div>";
+            document.getElementById('messagesdiv').appendChild(answerDiv);
+        }
     } else {
         ANSWER_SPAN.innerHTML = data['message'];
+        
+        if (data['code'] == 500) {
+            let answerDiv = document.createElement('div');
+            answerDiv.innerHTML = "<div class='cleft cmsg'><img class='headIcon radius' ondragstart='return false;' oncontextmenu='return false;'src='../images/bing2.png'><span class='name'><span>EdgeGPT</span></span><span class='content'>对话已被重置</span></div>";
+            document.getElementById('messagesdiv').appendChild(answerDiv);
+        }
+
         document.getElementById('send').disabled = false;
     }
 }
@@ -47,9 +60,17 @@ document.getElementById('send').onclick = function () {
         });
         return;
     }
+    
+    var radio = document.getElementsByName("style");
+    for (var i = 0; i < radio.length; i++) {
+        if (radio[i].checked) {
+            var radioValue = radio[i].value;
+        }
+    }
+
     let input = document.getElementById('editor');
-    let content = input.innerHTML;
-    if (content == '') {
+    let question = input.innerHTML;
+    if (question == '') {
         mdui.snackbar({
             message: '请输入内容',
             position: 'right-top'
@@ -58,7 +79,7 @@ document.getElementById('send').onclick = function () {
     }
 
     let div = document.createElement('div');
-    div.innerHTML = "<div class='cright cmsg'><img class='headIcon radius' ondragstart='return false;' oncontextmenu='return false;'src='../images/me.jpg'><span class='name'><span>You</span></span><span class='content'>" + content + "</span></div>";
+    div.innerHTML = "<div class='cright cmsg'><img class='headIcon radius' ondragstart='return false;' oncontextmenu='return false;'src='../images/me.jpg'><span class='name'><span>You</span></span><span class='content'>" + question + "</span></div>";
     document.getElementById('messagesdiv').appendChild(div);
 
     let answer_div = document.createElement('div');
@@ -70,7 +91,7 @@ document.getElementById('send').onclick = function () {
     answer_div.appendChild(ANSWER_SPAN);
     document.getElementById('messagesdiv').appendChild(answer_div);
 
-    WS.send(content);
+    WS.send(JSON.stringify({"style": radioValue, "question": question}));
     input.innerHTML = '';
     document.getElementById('send').disabled = true;
 }

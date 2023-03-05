@@ -36,6 +36,29 @@
     </div>
     <div class="lite-chatinput">
       <hr class="boundary">
+      <form>
+        <label class="mdui-radio">
+          对话风格:
+        </label>
+        <label class="mdui-radio">
+          <input type="radio" value="balanced" name="style" checked/>
+          <i class="mdui-radio-icon"></i>
+          平衡
+        </label>
+      
+        <label class="mdui-radio">
+          <input type="radio" value="creative" name="style"/>
+          <i class="mdui-radio-icon"></i>
+          创造
+        </label>
+      
+        <label class="mdui-radio">
+          <input type="radio" value="precise" name="style"/>
+          <i class="mdui-radio-icon"></i>
+          精确
+        </label>
+      </form>
+
       <div class="editor chatinput" aria-label="input area" contenteditable="true" ref="editor" id="editor"></div>
       <button class="send" id="send">发送</button>
     </div>
