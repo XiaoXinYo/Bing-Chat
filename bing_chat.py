@@ -21,11 +21,9 @@ APP.add_middleware(
 )
 ERROR_ANSWER = ['I’m still learning', '我还在学习']
 
-
 class GenerateResponse:
     def __init__(self):
-        self.response = None
-        self.onlyJSON = None
+        pass
     
     def _json(self):
         responseJSON = json.dumps(self.response, ensure_ascii=False)
@@ -50,7 +48,6 @@ class GenerateResponse:
         self.onlyJSON = onlyJSON
         return self._json()
 
-
 async def getrequestParameter(request: Request):
     data = {}
     if request.method == 'GET':
@@ -61,19 +58,16 @@ async def getrequestParameter(request: Request):
             data = await request.json()
     return dict(data)
 
-
 @APP.exception_handler(404)
 def error404(request, exc):
     return GenerateResponse().error(404, '未找到文件')
-
 
 @APP.exception_handler(500)
 def error500(request, exc):
     return GenerateResponse().error(500, '未知错误')
 
-
 @APP.websocket('/ws_stream')
-async def wsStream(ws: WebSocket = None):
+async def wsStream(ws: WebSocket=None):
     await ws.accept()
 
     chatBot = EdgeGPT.Chatbot('./cookie.json')
@@ -82,13 +76,13 @@ async def wsStream(ws: WebSocket = None):
             question = await ws.receive_text()
             if not question:
                 await ws.send_text(GenerateResponse().error(110, '参数错误'))
-
+            
             index = 0
             async for final, data in chatBot.ask_stream(question):
                 if not final:
                     answer = data[index:]
                     index = len(data)
-                    # answer = re.sub(r'\[.*?\]', '', answer)
+                    #answer = re.sub(r'\[.*?\]', '', answer)
                     answer = re.sub(r'\[\^.*?\^]', '', answer)
                     if answer:
                         await ws.send_text(GenerateResponse().success({
@@ -100,7 +94,7 @@ async def wsStream(ws: WebSocket = None):
                     if data.get('item').get('result').get('value') == 'Throttled':
                         await ws.send_text(GenerateResponse().error(120, '已上限,24小时后尝试', True))
                         continue
-
+                    
                     info = {
                         'answer': '',
                         'urls': [],
@@ -129,17 +123,16 @@ async def wsStream(ws: WebSocket = None):
             await ws.send_text(GenerateResponse().error(500, '未知错误', True))
             await chatBot.reset()
 
-
 @APP.route('/api', methods=['GET', 'POST'])
 @APP.websocket('/ws')
-async def ws(request: Request = None, ws: WebSocket = None):
+async def ws(request: Request=None, ws: WebSocket=None):
     if ws:
         await ws.accept()
     else:
         question = (await getrequestParameter(request)).get('question')
         if not question:
             return GenerateResponse().error(110, '参数错误')
-
+    
     chatBot = EdgeGPT.Chatbot('./cookie.json')
     while True:
         try:
@@ -148,7 +141,7 @@ async def ws(request: Request = None, ws: WebSocket = None):
                 if not question:
                     await ws.send_text(GenerateResponse().error(110, '参数错误'))
             data = await chatBot.ask(question)
-
+            
             if data.get('item').get('result').get('value') == 'Throttled':
                 if ws:
                     await ws.send_text(GenerateResponse().error(120, '已上限,24小时后尝试', True))
@@ -187,7 +180,6 @@ async def ws(request: Request = None, ws: WebSocket = None):
                 await chatBot.reset()
             else:
                 return GenerateResponse().error(500, '未知错误')
-
 
 if __name__ == '__main__':
     uvicorn.run(APP, host=HOST, port=PORT)

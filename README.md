@@ -42,15 +42,14 @@ Bing Chat服务端,通过WebSocket/API实现通讯.
 {"code": 200, "message": "success", "data": {answer:"您好，这是必应。", urls:[{"title": "The New Bing - Learn More", "url": "https://www.bing.com/new"}], "done": true}}
 ```
 ## 响应参数
-| 名称      | 说明   |
-|---------|------|
-| code    | 状态码  |
-| message | 消息   |
-| data    | 数据   |
-| text    | 文本   |
-| links   | 链接   |
-| done    | 是否完成 |
-
+名称|说明
+---|---
+code|状态码
+message|消息
+data|数据
+text|文本
+links|链接
+done|是否完成
 ## emm
 1. 页面写的有点丑，有能力的大神，可以pull request一下，如果你有的example也可以提交.
 2. 搭建好建议不要对外开放，因为目前Bing Chat24小时内有次数限制.
