@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 # Author: XiaoXinYo
 
+from typing import Union
 from fastapi import FastAPI, Request, WebSocket, Response
 from fastapi.middleware.cors import CORSMiddleware
 import uvicorn
@@ -21,7 +22,7 @@ APP.add_middleware(
 )
 STYLES = ['balanced', 'creative', 'precise']
 
-def needReset(data, answer):
+def needReset(data: dict, answer: str) -> bool:
     maxTimes = data.get('item').get('throttling').get('maxNumUserMessagesInConversation')
     nowTimes = data.get('item').get('throttling').get('numUserMessagesInConversation')
     errorAnswers = ['I’m still learning', '我还在学习']
@@ -29,8 +30,9 @@ def needReset(data, answer):
         return True
     elif nowTimes == maxTimes:
         return True
+    return False
 
-def getUrl(data):
+def getUrl(data: dict) -> list:
     sourceAttributions = data.get('item').get('messages')[1].get('sourceAttributions')
     urls = []
     if sourceAttributions:
@@ -41,14 +43,14 @@ def getUrl(data):
             })
     return urls
 
-def getAnswer(data):
+def getAnswer(data: dict) -> str:
     messages = data.get('item').get('messages')
     if 'text' in messages[1]:
         return messages[1].get('text')
     else:
         return messages[1].get('adaptiveCards')[0].get('body')[0].get('text')
 
-def getStyleEnum(style):
+def getStyleEnum(style: str) -> EdgeGPT.ConversationStyle:
     enum = EdgeGPT.ConversationStyle
     if style == 'balanced':
         enum = enum.balanced
@@ -59,16 +61,19 @@ def getStyleEnum(style):
     return enum
 
 class GenerateResponse:
+    TYPE = Union[str, Response]
+
     def __init__(self):
-        pass
+        self.response = {}
+        self.onlyJSON = False
     
-    def _json(self):
+    def _json(self) -> TYPE:
         responseJSON = json.dumps(self.response, ensure_ascii=False)
         if self.onlyJSON:
             return responseJSON
         return Response(responseJSON, media_type='application/json')
 
-    def error(self, code, message, onlyJSON=False):
+    def error(self, code: int, message: str, onlyJSON: bool=False) -> TYPE:
         self.response = {
             'code': code,
             'message': message
@@ -76,7 +81,7 @@ class GenerateResponse:
         self.onlyJSON = onlyJSON
         return self._json()
 
-    def success(self, data, onlyJSON=False):
+    def success(self, data, onlyJSON: bool=False) -> TYPE:
         self.response = {
             'code': 200,
             'message': 'success',
@@ -85,7 +90,7 @@ class GenerateResponse:
         self.onlyJSON = onlyJSON
         return self._json()
 
-async def getrequestParameter(request: Request):
+async def getrequestParameter(request: Request) -> dict:
     data = {}
     if request.method == 'GET':
         data = request.query_params
@@ -96,15 +101,15 @@ async def getrequestParameter(request: Request):
     return dict(data)
 
 @APP.exception_handler(404)
-def error404(request, exc):
+def error404(request, exc) -> Response:
     return GenerateResponse().error(404, '未找到文件')
 
 @APP.exception_handler(500)
-def error500(request, exc):
+def error500(request, exc) -> Response:
     return GenerateResponse().error(500, '未知错误')
 
 @APP.websocket('/ws_stream')
-async def wsStream(ws: WebSocket):
+async def wsStream(ws: WebSocket) -> str:
     await ws.accept()
 
     chatBot = EdgeGPT.Chatbot('./cookie.json')
@@ -169,7 +174,7 @@ async def wsStream(ws: WebSocket):
             await chatBot.reset()
 
 @APP.route('/api', methods=['GET', 'POST'])
-async def api(request: Request):
+async def api(request: Request) -> Response:
     parameters = await getrequestParameter(request)
     style = parameters.get('style')
     question = parameters.get('question')
@@ -195,7 +200,7 @@ async def api(request: Request):
     return GenerateResponse().success(info)
     
 @APP.websocket('/ws')
-async def ws(ws: WebSocket):
+async def ws(ws: WebSocket) -> str:
     await ws.accept()
 
     chatBot = EdgeGPT.Chatbot('./cookie.json')
