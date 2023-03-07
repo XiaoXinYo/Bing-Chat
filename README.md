@@ -26,7 +26,7 @@ code|状态码|
 message|消息|
 data|数据|
 answer|回答|
-links|链接|
+urls|链接|
 done|完成|部分传输是否完成,当连接/ws_stream时存在
 reset|重置|下次对话是否被重置,当为WebSocket时存在(code为500时也会被重置)
 ### 整体传输
