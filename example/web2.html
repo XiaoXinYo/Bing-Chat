@@ -366,12 +366,15 @@
           )
             return;
 
-          send(queryTxt.value);
+          send(JSON.stringify({
+            'style': 'balanced',
+            'question': queryTxt.value
+          }));
           msgList.value.push(generateMsg(queryTxt.value));
           queryTxt.value = "";
           toggleGStatus(true);
         };
-
+        
         return {
           icon,
           toggleGStatus,

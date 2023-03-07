@@ -99,7 +99,10 @@
                 document.getElementById('msg').appendChild(TEXT_DIV);
                 TEXT_DIV.innerHTML += '服务端：';
 
-                WS.send(content);
+                WS.send(JSON.stringify({
+                    'style': 'balanced',
+                    'question': content
+                }));
                 input.value = '';
                 document.getElementById('send').disabled = true;
             }
