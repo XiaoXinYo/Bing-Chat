@@ -9,11 +9,6 @@
   <meta name="viewport" content="width=device-width,initial-scale=1,minimum-scale=1,maximum-scale=1,user-scalable=no" />
   <link rel="stylesheet" href="https://unpkg.com/normalize.css@8.0.1/normalize.css" />
 
-  <!--<link -->
-  <!--   rel="stylesheet" -->
-  <!--   href="//unpkg.com/@highlightjs/cdn-assets@11.7.0/styles/default.min.css" -->
-  <!-- /> -->
-  <!-- <script src="//unpkg.com/@highlightjs/cdn-assets@11.7.0/highlight.min.js"></script> -->
   <style>
     html {
       transition: background 0.3s cubic-bezier(0.4, 0, 0.2, 1);
@@ -129,6 +124,13 @@
   <script src="https://unpkg.com/iconify-icon@1.0.7/dist/iconify-icon.min.js"></script>
   <script src="https://unpkg.com/@unocss/runtime@0.50.3/attributify.global.js"></script>
   <script src="https://unpkg.com/marked@4.2.12/marked.min.js"></script>
+  <script src="https://unpkg.com/he@1.2.0/he.js"></script>
+  <link
+    async
+    rel="stylesheet"
+    href="//unpkg.com/@highlightjs/cdn-assets@11.7.0/styles/default.min.css"
+  />
+  <script async src="//unpkg.com/@highlightjs/cdn-assets@11.7.0/highlight.min.js"></script>
   <script>
     const { h, ref, defineComponent, computed, onMounted, watch, nextTick } =
       Vue;
@@ -197,13 +199,29 @@
     }
     watch(socketData, getSocketMsg, { immediate: true });
 
+    const style = ref('balanced')
+    const styleOptions = [
+      {
+        label: 'precise',
+        value: 'precise'
+      },
+      {
+        label: 'balanced',
+        value: 'balanced'
+      },
+      {
+        label: 'creative',
+        value: 'creative'
+      },
+    ]
+
     //展示代码
     const codeBox = defineComponent({
       props: ["cls", "code"],
       setup(props) {
         const { cls, code } = props;
         const { copy, copied } = useClipboard();
-        const codeEl = ref(null);
+        const language = cls.replace('language-', '').trim()
 
         return () =>
           h("div", {}, [
@@ -237,17 +255,18 @@
                   ),
               ]
             ),
-            // NOTE: 需要html符号转义的方法
-            // h(NCode, {
-            //   language,
-            //   code,
-            // }),
-            h("div", {
-              class: "ws-pre-wrap px-10px pb-7px pt-5px",
-              style: "white-space:pre-wrap",
-              ref: codeEl,
-              innerHTML: code,
-            }),
+            h(
+              'div',
+              {
+                class: 'px-10px py-7px ',
+              },
+              h(NCode, {
+                "word-wrap": true,
+                inline: !language,
+                language,
+                code: he.decode(code),
+              })
+            ),
           ]);
       },
     });
@@ -289,7 +308,7 @@
             if (tagName == "code") {
               return h(codeBox, {
                 cls,
-                code: children,
+                code: innerHTML,
               });
             }
             return h(tagName, { class: cls }, children);
@@ -367,7 +386,7 @@
             return;
 
           send(JSON.stringify({
-            'style': 'balanced',
+            'style': style.value,
             'question': queryTxt.value
           }));
           msgList.value.push(generateMsg(queryTxt.value));
@@ -399,11 +418,25 @@
       `,
     });
 
+    const settingBox = defineComponent({
+      setup(){
+
+      },
+      template: `
+      <n-drawer v-model:show="active" :width="502" :placement="placement">
+        <n-drawer-content title="斯通纳">
+          《斯通纳》是美国作家约翰·威廉姆斯在 1965 年出版的小说。
+        </n-drawer-content>
+      </n-drawer>
+      `
+    })
+
     // 主要内容
     const content = defineComponent({
       components: {
         chatbox,
         inputbox,
+        settingBox
       },
       setup() {
         const themeIcon = computed(() =>
@@ -453,15 +486,23 @@
           scollBoxH,
           scrollEl,
           generateStatus,
+          styleOptions,
+          style
         };
       },
       template: `
          <iconify-icon cursor-pointer fixed top-5 right="5%" width="39" color-orange-4
             dark:color-amber-3 @click="toggleDark()" :icon="themeIcon" />
-          <div fixed top-5 right="5%" translate-x--80px flex items-center h-40px>
+          <div fixed top-5 right="5%" translate-x--70px flex items-center h-40px>
             <span class="text-xs text-gray-500 dark:text-gray-400">连接状态：</span>
             <iconify-icon :class="connectColor" width="25" :icon="connectIcon" />
           </div>
+         <div fixed top-5 right="5%" flex translate-x--180px items-center h-40px>
+          <span class="text-xs text-gray-500 dark:text-gray-400">对话模式：</span>
+           <n-popselect v-model:value="style" :options="styleOptions" trigger="click">
+            <span color-black dark:color-white font-12px>{{ style }}</span>
+          </n-popselect>
+        </div>
          <inputbox />
          <n-scrollbar ref="scrollEl" :style="'max-height: '+scollBoxH + 'px'" mt-60px trigger="none">
            <n-list :show-divider="false">
@@ -488,7 +529,7 @@
         };
       },
       template: `
-        <n-config-provider :theme="theme">
+        <n-config-provider :theme="theme" :hljs="hljs">
           <n-message-provider>
             <content></content>
           </n-message-provider>
