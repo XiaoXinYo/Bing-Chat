@@ -1,4 +1,5 @@
 fastapi
 uvicorn
+asyncio
 python-multipart
 EdgeGPT >= 0.0.55

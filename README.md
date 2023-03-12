@@ -2,7 +2,7 @@
 Bing Chat服务端,通过WebSocket/API实现通讯.
 ## 需求
 1. 语言: Python3.8+.
-2. 包: fastapi, uvicorn, python-multipart, EdgeGPT.
+2. 包: fastapi, uvicorn, asyncio, python-multipart, EdgeGPT.
 3. 其他: New Bing账户.
 ## 配置
 地址和端口分别在第11行和第12行.
