@@ -1,3 +1,5 @@
+## 提示
+如出现报错，请先将EdgeGPT库更新到最新版本(0.0.56.2)，还不能解决再提交issue.
 ## 介绍
 Bing Chat服务端,通过WebSocket/API实现通讯.
 ## 需求
@@ -5,7 +7,7 @@ Bing Chat服务端,通过WebSocket/API实现通讯.
 2. 包: fastapi, uvicorn, asyncio, python-multipart, EdgeGPT.
 3. 其他: New Bing账户.
 ## 配置
-地址和端口分别在第11行和第12行.
+地址和端口分别在第15行和第16行.
 ## 使用
 1. 浏览器安装Cookie-Editor扩展.
 2. 在[https://www.bing.com/chat](https://www.bing.com/chat)页面中点击扩展.
