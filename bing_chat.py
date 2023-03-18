@@ -109,7 +109,7 @@ class GenerateResponse:
     def __init__(self):
         self.response = {}
         self.onlyJSON = False
-    
+
     def _json(self) -> TYPE:
         responseJSON = json.dumps(self.response, ensure_ascii=False)
         if self.onlyJSON:
@@ -173,13 +173,13 @@ async def ws(ws: WebSocket) -> str:
             elif style not in STYLES:
                 await ws.send_text(GenerateResponse().error(110, 'style不存在', True))
                 continue
-            
+
             data = await chatBot.ask(question, conversation_style=getStyleEnum(style))
-            
+
             if data.get('item').get('result').get('value') == 'Throttled':
                 await ws.send_text(GenerateResponse().error(120, '已上限,24小时后尝试', True))
                 continue
-            
+
             info = {
                 'answer': '',
                 'urls': [],
@@ -189,11 +189,11 @@ async def ws(ws: WebSocket) -> str:
             answer = filterAnswer(answer)
             info['answer'] = answer
             info['urls'] = getUrl(data)
-            
+
             if needReset(data, answer):
                 await chatBot.reset()
                 info['reset'] = True
-            
+
             await ws.send_text(GenerateResponse().success(info, True))
         except FileExistsError:
             await ws.send_text(GenerateResponse().error(500, '未知错误', True))
@@ -209,10 +209,10 @@ async def api(request: Request) -> Response:
         return GenerateResponse().error(110, '参数不能为空')
     elif style not in STYLES:
         return GenerateResponse().error(110, 'style不存在')
-    
+
     token, chatBot = getChatBot(token)
     data = await chatBot.ask(question, conversation_style=getStyleEnum(style))
-    
+
     if data.get('item').get('result').get('value') == 'Throttled':
         return GenerateResponse().error(120, '已上限,24小时后尝试')
 
@@ -226,11 +226,11 @@ async def api(request: Request) -> Response:
     answer = filterAnswer(answer)
     info['answer'] = answer
     info['urls'] = getUrl(data)
-    
+
     if needReset(data, answer):
         await chatBot.reset()
         info['reset'] = True
-    
+
     return GenerateResponse().success(info)
 
 @APP.websocket('/ws_stream')
@@ -252,7 +252,7 @@ async def wsStream(ws: WebSocket) -> str:
             elif style not in STYLES:
                 await ws.send_text(GenerateResponse().error(110, 'style不存在', True))
                 continue
-            
+
             index = 0
             info = {
                 'answer': '',
@@ -272,7 +272,7 @@ async def wsStream(ws: WebSocket) -> str:
                     if data.get('item').get('result').get('value') == 'Throttled':
                         await ws.send_text(GenerateResponse().error(120, '已上限,24小时后尝试', True))
                         break
-                    
+
                     messages = data.get('item').get('messages')
                     info['answer'] = getStreamAnswer(data)
                     if 'text' not in messages[1]:
@@ -283,7 +283,7 @@ async def wsStream(ws: WebSocket) -> str:
                     if needReset(data, answer):
                         await chatBot.reset()
                         info['reset'] = True
-                    
+
                     await ws.send_text(GenerateResponse().success(info, True))
         except Exception:
             await ws.send_text(GenerateResponse().error(500, '未知错误', True))
@@ -299,7 +299,7 @@ async def apiStream(request: Request) -> Response:
         return GenerateResponse().error(110, '参数不能为空')
     elif style not in STYLES:
         return GenerateResponse().error(110, 'style不存在')
-    
+
     token, chatBot = getChatBot(token)
     async def generator() -> AsyncGenerator:
         index = 0
@@ -322,7 +322,7 @@ async def apiStream(request: Request) -> Response:
                 if data.get('item').get('result').get('value') == 'Throttled':
                     yield GenerateResponse().error(120, '已上限,24小时后尝试', True)
                     break
-                
+
                 messages = data.get('item').get('messages')
                 info['answer'] = getStreamAnswer(data)
                 if 'text' not in messages[1]:
@@ -333,10 +333,25 @@ async def apiStream(request: Request) -> Response:
                 if needReset(data, answer):
                     await chatBot.reset()
                     info['reset'] = True
-                
+
                 yield GenerateResponse().success(info, True)
-    
+
     return StreamingResponse(generator(), media_type='text/plain')
 
+def cookieFileCheck():
+    try:
+        with open(COOKIE_FILE_PATH, "r") as cf:
+            cookies = json.load(cf)
+            cookie_num = len(cookies)
+            if cookie_num <= 0:
+                return -1
+            else:
+                return 0
+    except:
+        return -1
+
 if __name__ == '__main__':
+    if cookieFileCheck() != 0:
+        print("ERROR cookie导入失败，请检查 %s" % COOKIE_FILE_PATH)
+        exit(-1)
     uvicorn.run(APP, host=HOST, port=PORT)
