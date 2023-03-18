@@ -3,17 +3,31 @@
 ## 介绍
 Bing Chat服务端,通过WebSocket/API实现通讯.
 ## 需求
-1. 语言: Python3.8+.
-2. 包: fastapi, uvicorn, asyncio, python-multipart, EdgeGPT.
-3. 其他: New Bing账户.
-## 配置
-1. 地址和端口分别在第15行和第16行.
-2. Cookie文件路径在第17行.
+1. 已通过候补名单的New Bing账户
+### A. 本机访问
+2. 语言: Python3.8+.
+3. 包: fastapi, uvicorn, asyncio, python-multipart, EdgeGPT.
+### B. 局域网访问，推荐使用docker-compose
+2. 软件: docker, docker-compose
+
 ## 使用
 1. 浏览器安装Cookie-Editor扩展.
 2. 在[https://www.bing.com/chat](https://www.bing.com/chat)页面中点击扩展.
-3. 点击扩展右下角的Export,将复制的内容粘贴到Cookie文件.
-4. 运行bing_chat.py.
+3. 点击扩展右下角的Export,将复制的内容粘贴到cookie.json.
+### A. 本机访问
+4. (可选： 配置地址和端口，在bing_chat.py第15-16行) 运行bing_chat.py.
+5. 直接从文件系统中打开example中三个web窗口之一
+### B. 局域网访问，推荐使用docker-compose
+4. 打开.env文件，默认值为srv_port=5000（服务端端口） cli_port=80（客户端端口），按需修改，避免和现有端口冲突
+5. 在代码根目录执行 docker-compose up -d
+6. 从局域网其他设备访问客户端，即 host_ip:cli_port
+## 界面展示
+web.html
+![snap1](./assets/snap1.png)
+web2.html
+![snap2](./assets/snap2.png)
+web3/html/index.html
+![snap3](./assets/snap3.png)
 ## 参数
 ### 请求
 名称|必填|中文名|说明
