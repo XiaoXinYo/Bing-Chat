@@ -1,4 +1,6 @@
 <!DOCTYPE html>
+<script> const DEFAULT_SRV_URL = "ws://127.0.0.1:5000/ws_stream" </script>
+<script src="./.env"></script>
 <html lang="zh-cn">
     <head>
         <meta charset="utf-8">
@@ -21,10 +23,10 @@
                 </a>
             </div>
         </div>
-        
+
         <div class="mdui-card" style="height: 300px; overflow-y: scroll;">
             <div id="msg" class="mdui-card-content">
-                
+
             </div>
         </div>
 
@@ -35,9 +37,28 @@
         </div>
 
         <script type="text/javascript">
-            const WS = new WebSocket('ws://127.0.0.1:5000/ws_stream');
+            function get_src_url() {
+                const protocol = window.location.protocol
+                if (protocol != "http:" && protocol != "https:") {
+                    // use default url
+                    return DEFAULT_SRV_URL;
+                }
+                const host = window.location.hostname
+
+                let port = "5000"
+                try {
+                    port = srv_port
+                }catch (error){
+                    console.log(error.message)
+                }
+                // ws://127.0.0.1:5000/ws_stream
+                return "ws://" + host + ":" + port + "/ws_stream"
+            }
+            const target_url = get_src_url()
+            console.log("connecting to " + target_url)
+            const WS = new WebSocket(target_url);
             let TEXT_DIV = null;
-            
+
             WS.onopen = function() {
                 console.log('连接成功');
                 mdui.snackbar({
@@ -73,7 +94,7 @@
             }
 
             document.getElementById('send').onclick = function() {
-                
+
                 if (WS.readyState != 1) {
                     mdui.snackbar({
                         message: '连接已断开',

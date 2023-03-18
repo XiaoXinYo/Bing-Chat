@@ -1,0 +1,16 @@
+version: "3.9"
+services:
+  client:
+    image: nginx:1.23.3
+    ports:
+      - "${cli_port}:80"
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf
+      - ./example/:/etc/nginx/html/
+      - ./.env:/etc/nginx/html/.env  # make a copy for client to read
+  server:
+    image: huwei901108/bing_chat:latest
+    ports:
+      - "${srv_port}:5000"
+    volumes:
+      - ./:/app/
