@@ -1,4 +1,24 @@
-const WS = new WebSocket('ws://127.0.0.1:5000/ws_stream');//使用https时需要wss协议，使用http仅需要ws协议
+const DEFAULT_SRV_URL = "ws://127.0.0.1:5000/ws_stream";
+function get_src_url() {
+    const protocol = window.location.protocol
+    if (protocol != "http:" && protocol != "https:") {
+        // use default url
+        return DEFAULT_SRV_URL;
+    }
+    const host = window.location.hostname
+
+    let port = "5000"
+    try {
+        port = srv_port
+    }catch (error){
+        console.log(error.message)
+    }
+    // ws://127.0.0.1:5000/ws_stream
+    return "ws://" + host + ":" + port + "/ws_stream"
+}
+const target_url = get_src_url()
+console.log("connecting to " + target_url)
+const WS = new WebSocket(target_url);//使用https时需要wss协议，使用http仅需要ws协议
 let ANSWER_SPAN = null;
 
 WS.onopen = function () {
@@ -41,7 +61,7 @@ WS.onmessage = function (e) {
         }
     } else {
         ANSWER_SPAN.innerHTML = data['message'];
-        
+
         if (data['code'] == 500) {
             let answerDiv = document.createElement('div');
             answerDiv.innerHTML = "<div class='cleft cmsg'><img class='headIcon radius' ondragstart='return false;' oncontextmenu='return false;'src='../images/bing2.png'><span class='name'><span>EdgeGPT</span></span><span class='content'>对话已被重置</span></div>";
@@ -60,7 +80,7 @@ document.getElementById('send').onclick = function () {
         });
         return;
     }
-    
+
     var radio = document.getElementsByName("style");
     for (var i = 0; i < radio.length; i++) {
         if (radio[i].checked) {

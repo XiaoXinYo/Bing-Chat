@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html>
-
+<script> const DEFAULT_SRV_URL = "ws://127.0.0.1:5000/ws" </script>
+<script src="./.env"></script>
 <head>
   <meta charset="utf-8" />
   <title>Bing Chat</title>
@@ -160,6 +161,26 @@
     const toggleGStatus = (val) => (generateStatus.value = val);
     const queryTxt = ref("");
 
+    function get_src_url() {
+      const protocol = window.location.protocol
+      if (protocol != "http:" && protocol != "https:") {
+        // use default url
+        return DEFAULT_SRV_URL;
+      }
+      const host = window.location.hostname
+
+      let port = "5000"
+      try {
+        port = srv_port
+      } catch (error) {
+        console.log(error.message)
+      }
+      // ws://127.0.0.1:5000/ws
+      return "ws://" + host + ":" + port + "/ws"
+    }
+    const target_url = get_src_url()
+    console.log("connecting to " + target_url)
+
     /**
      * 生成消息
      * socketStatus 连接状态
@@ -172,7 +193,7 @@
       send,
       open,
       data: socketData,
-    } = useWebSocket("ws://127.0.0.1:5000/ws");
+    } = useWebSocket(target_url);
     const reload = () => {
       open();
       toggleGStatus(false);
@@ -354,11 +375,11 @@
               <div v-for="url in urls"  mr-10px mb-5px overflow-hidden rd-20px>
                 <label :title="url.title">
                   <n-tag :bordered="false" round bordered pb-10px>
-                    <div @click="toUrl(url.url)" hover-underline overflow-hidden underline-offset-1 
+                    <div @click="toUrl(url.url)" hover-underline overflow-hidden underline-offset-1
                     ws-nowrap max-w-120px text-ellipsis>{{url.title}}</div>
                   </n-tag>
                 </label>
-              </div>  
+              </div>
             </div>
           </div>
           </div>
@@ -393,7 +414,7 @@
           queryTxt.value = "";
           toggleGStatus(true);
         };
-        
+
         return {
           icon,
           toggleGStatus,
