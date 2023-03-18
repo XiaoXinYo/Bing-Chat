@@ -14,6 +14,7 @@ import re
 
 HOST = '0.0.0.0'
 PORT = 5000
+COOKIE_PATH = './cookie.json'
 
 APP = FastAPI()
 APP.add_middleware(
@@ -70,7 +71,7 @@ class GenerateResponse:
     def __init__(self):
         self.response = {}
         self.onlyJSON = False
-    
+
     def _json(self) -> TYPE:
         responseJSON = json.dumps(self.response, ensure_ascii=False)
         if self.onlyJSON:
@@ -129,7 +130,7 @@ def error500(request: Request, exc: Exception) -> Response:
 async def wsStream(ws: WebSocket) -> str:
     await ws.accept()
 
-    chatBot = EdgeGPT.Chatbot('./cookie.json')
+    chatBot = EdgeGPT.Chatbot(COOKIE_PATH)
     while True:
         try:
             parameters = await ws.receive_json()
@@ -144,7 +145,7 @@ async def wsStream(ws: WebSocket) -> str:
             elif style not in STYLES:
                 await ws.send_text(GenerateResponse().error(110, 'style不存在', True))
                 continue
-            
+
             index = 0
             info = {
                 'answer': '',
@@ -164,7 +165,7 @@ async def wsStream(ws: WebSocket) -> str:
                     if data.get('item').get('result').get('value') == 'Throttled':
                         await ws.send_text(GenerateResponse().error(120, '已上限,24小时后尝试', True))
                         continue
-                    
+
                     messages = data.get('item').get('messages')
                     if 'text' in messages[1]:
                         answer = messages[1].get('text')
@@ -183,7 +184,7 @@ async def wsStream(ws: WebSocket) -> str:
                     if needReset(data, answer):
                         await chatBot.reset()
                         info['reset'] = True
-                    
+
                     await ws.send_text(GenerateResponse().success(info, True))
         except Exception:
             await ws.send_text(GenerateResponse().error(500, '未知错误', True))
@@ -199,19 +200,19 @@ async def api(request: Request) -> Response:
         return GenerateResponse().error(110, '参数不能为空')
     elif style not in STYLES:
         return GenerateResponse().error(110, 'style不存在')
-    
+
     global CHATBOT
     if token in CHATBOT:
         chatBot = CHATBOT[token]['chatBot']
         CHATBOT[token]['useTime'] = time.time()
     else:
-        chatBot = EdgeGPT.Chatbot('./cookie.json')
+        chatBot = EdgeGPT.Chatbot(COOKIE_PATH)
         token = str(uuid.uuid4())
         CHATBOT[token] = {}
         CHATBOT[token]['chatBot'] = chatBot
         CHATBOT[token]['useTime'] = time.time()
     data = await chatBot.ask(question, getStyleEnum(style))
-    
+
     if data.get('item').get('result').get('value') == 'Throttled':
         return GenerateResponse().error(120, '已上限,24小时后尝试')
 
@@ -225,18 +226,18 @@ async def api(request: Request) -> Response:
     answer = answer.rstrip()
     info['answer'] = answer
     info['urls'] = getUrl(data)
-    
+
     if needReset(data, answer):
         await chatBot.reset()
         info['reset'] = True
-    
+
     return GenerateResponse().success(info)
-    
+
 @APP.websocket('/ws')
 async def ws(ws: WebSocket) -> str:
     await ws.accept()
 
-    chatBot = EdgeGPT.Chatbot('./cookie.json')
+    chatBot = EdgeGPT.Chatbot(COOKIE_PATH)
     while True:
         try:
             parameters = await ws.receive_json()
@@ -251,13 +252,13 @@ async def ws(ws: WebSocket) -> str:
             elif style not in STYLES:
                 await ws.send_text(GenerateResponse().error(110, 'style不存在', True))
                 continue
-            
+
             data = await chatBot.ask(question, getStyleEnum(style))
-            
+
             if data.get('item').get('result').get('value') == 'Throttled':
                 await ws.send_text(GenerateResponse().error(120, '已上限,24小时后尝试', True))
                 continue
-            
+
             info = {
                 'answer': '',
                 'urls': [],
@@ -267,15 +268,30 @@ async def ws(ws: WebSocket) -> str:
             answer = answer.rstrip()
             info['answer'] = answer
             info['urls'] = getUrl(data)
-            
+
             if needReset(data, answer):
                 await chatBot.reset()
                 info['reset'] = True
-            
+
             await ws.send_text(GenerateResponse().success(info, True))
         except FileExistsError:
             await ws.send_text(GenerateResponse().error(500, '未知错误', True))
             await chatBot.reset()
 
+def cookieFileCheck():
+    try:
+        with open(COOKIE_PATH, "r") as cf:
+            cookies = json.load(cf)
+            cookie_num = len(cookies)
+            if cookie_num <= 0:
+                return -1
+            else:
+                return 0
+    except:
+        return -1
+
 if __name__ == '__main__':
+    if cookieFileCheck() != 0:
+        print("ERROR cookie导入失败，请检查 %s" % COOKIE_PATH)
+        exit(-1)
     uvicorn.run(APP, host=HOST, port=PORT)
