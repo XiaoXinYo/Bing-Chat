@@ -14,6 +14,7 @@ import re
 
 HOST = '0.0.0.0'
 PORT = 5000
+COOKIE_FILE_PATH = './cookie.json'
 
 APP = FastAPI()
 APP.add_middleware(
@@ -129,7 +130,7 @@ def error500(request: Request, exc: Exception) -> Response:
 async def wsStream(ws: WebSocket) -> str:
     await ws.accept()
 
-    chatBot = EdgeGPT.Chatbot('./cookie.json')
+    chatBot = EdgeGPT.Chatbot(COOKIE_FILE_PATH)
     while True:
         try:
             parameters = await ws.receive_json()
@@ -205,7 +206,7 @@ async def api(request: Request) -> Response:
         chatBot = CHATBOT[token]['chatBot']
         CHATBOT[token]['useTime'] = time.time()
     else:
-        chatBot = EdgeGPT.Chatbot('./cookie.json')
+        chatBot = EdgeGPT.Chatbot(COOKIE_FILE_PATH)
         token = str(uuid.uuid4())
         CHATBOT[token] = {}
         CHATBOT[token]['chatBot'] = chatBot
@@ -236,7 +237,7 @@ async def api(request: Request) -> Response:
 async def ws(ws: WebSocket) -> str:
     await ws.accept()
 
-    chatBot = EdgeGPT.Chatbot('./cookie.json')
+    chatBot = EdgeGPT.Chatbot(COOKIE_FILE_PATH)
     while True:
         try:
             parameters = await ws.receive_json()

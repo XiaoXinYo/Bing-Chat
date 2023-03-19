@@ -7,11 +7,12 @@ Bing Chat服务端,通过WebSocket/API实现通讯.
 2. 包: fastapi, uvicorn, asyncio, python-multipart, EdgeGPT.
 3. 其他: New Bing账户.
 ## 配置
-地址和端口分别在第15行和第16行.
+1. 地址和端口分别在第15行和第16行.
+2. Cookie文件路径在第17行.
 ## 使用
 1. 浏览器安装Cookie-Editor扩展.
 2. 在[https://www.bing.com/chat](https://www.bing.com/chat)页面中点击扩展.
-3. 点击扩展右下角的Export,将复制的内容粘贴到cookie.json.
+3. 点击扩展右下角的Export,将复制的内容粘贴到Cookie文件.
 4. 运行bing_chat.py.
 ## 参数
 ### 请求
