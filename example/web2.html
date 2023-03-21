@@ -215,107 +215,38 @@
       },
     ]
 
-    //展示代码
-    const codeBox = defineComponent({
-      props: ["cls", "code"],
-      setup(props) {
-        const { cls, code } = props;
-        const { copy, copied } = useClipboard();
-        const language = cls.replace('language-', '').trim()
-
-        return () =>
-          h("div", {}, [
-            h(
-              "div",
-              {
-                class:
-                  "px-10px py-7px bg-zinc-7 justify-between text-white flex items-center",
-              },
-              [
-                h("span", { class: "block overflow-hidden flex" }, cls),
-                copied.value
-                  ? h("span", "copied!")
-                  : h(
-                    "label",
-                    {
-                      class: "cursor-pointer h-20px",
-                      title: "copy code",
-                      onClick: () => {
-                        copy(codeEl.value.innerText);
-                        copied.value = true;
-                      },
-                    },
-                    [
-                      h("iconify-icon", {
-                        class: "",
-                        icon: "basil:copy-solid",
-                        width: "20",
-                      }),
-                    ]
-                  ),
-              ]
-            ),
-            h(
-              'div',
-              {
-                class: 'px-10px py-7px ',
-              },
-              h(NCode, {
-                "word-wrap": true,
-                inline: !language,
-                language,
-                code: he.decode(code),
-              })
-            ),
-          ]);
-      },
-    });
-
+    const renderer = new marked.Renderer();
+    renderer.code = (code, language) => {
+      const highlighted = hljs.highlightAuto(code).value;
+      return `<copyable-pre>
+        <pre grid shadow relative my-5px rd-10px overflow-hidden>
+          <code class="hljs ${language}">${highlighted}</code>
+        </pre>
+      </copyable-pre>`;
+    };
+    renderer.codespan = (code) => {
+      const highlighted = hljs.highlightAuto(code).value;
+      return `<span inline-flex shadow relative rd-6px overflow-hidden break-all m-2px>
+                <code class="hljs" !px-3px !py-0>${highlighted}</code>
+              </span>`;
+    };
+    marked.setOptions({ renderer });
     // 消息展示区域
     const textBox = defineComponent({
-      props: ["text"],
+      props: ["text","isUser"],
       setup(props) {
         const { text } = props;
 
         const mdTxt = marked.parse(text);
-        const codeReg = /<code>(.*?)<\/code>/g;
-        const preTag =
-          "<pre bg-zinc-1 dark:bg-dark-3 rd-10px overflow-hidden>";
-        const codeTxt = mdTxt
-          .replace(/<pre>/g, preTag)
-          .replace(codeReg, (match, p1) => {
-            return `${preTag}${match}</pre>`;
-          });
 
-        function parse(htmlStr) {
-          const tagRegex = /<([a-zA-Z]+)([^>]*)>([\s\S]*?)<\/\1>/g;
-          const matches = [...htmlStr.matchAll(tagRegex)];
-          if (!matches.length) return [h("div", { innerHTML: htmlStr })];
-          return matches.map((match) => {
-            const [fullMatch, tagName, attrs, innerHTML] = match;
-            const cls = attrs
-              .trim()
-              .split(/\s+/)
-              .reduce((acc, attr) => {
-                const [name, value] = attr.split("=");
-                const str =
-                  name == "class" ? value.replaceAll('"', "") : name;
-                acc += " " + str;
-                return acc;
-              }, "");
-
-            const children = innerHTML ? parse(innerHTML) : null;
-            if (tagName == "code") {
-              return h(codeBox, {
-                cls,
-                code: innerHTML,
-              });
-            }
-            return h(tagName, { class: cls }, children);
-          });
-        }
         return () => {
-          return parse(codeTxt);
+          if (!text) return void 0;
+          if (props.isUser) return h('div', {
+            innerText: text
+          });
+          return h('div',{
+            innerHTML: mdTxt
+          });
         };
       },
     });
@@ -341,14 +272,15 @@
           boxCls,
           msg,
           urls,
-          toUrl
+          toUrl,
+          isUser
         };
       },
       template: `
         <div w-full flex :class="containerCls">
           <div class="chatbox" transition-transform max-w="60%" px-25px>
           <div  shadow border="1px solid gray-2" dark:border-color-black px-15px py-10px :class="boxCls" rd-25px border-box >
-            <textBox :text="msg"/>
+            <textBox :text="msg" :isUser="isUser"/>
             <div flex flex-wrap w-full v-if="urls" mt-10px>
               <span v-if="urls.length">参考链接：</span>
               <div v-for="url in urls"  mr-10px mb-5px overflow-hidden rd-20px>
