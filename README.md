@@ -1,5 +1,5 @@
 ## 提示
-如出现报错，请先将EdgeGPT库更新到0.1.2，还不能解决再提交issue.
+如出现报错，请先将EdgeGPT库更新到0.1.10.1+，还不能解决再提交issue.
 ## 介绍
 Bing Chat服务端,通过WebSocket/API实现通讯.
 ## 需求
