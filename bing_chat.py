@@ -153,7 +153,7 @@ async def wsStream(ws: WebSocket) -> str:
                 'done': False,
                 'reset': False
             }
-            async for final, data in chatBot.ask_stream(question, getStyleEnum(style)):
+            async for final, data in chatBot.ask_stream(question, conversation_style=getStyleEnum(style)):
                 if not final:
                     answer = data[index:]
                     index = len(data)
@@ -211,7 +211,7 @@ async def api(request: Request) -> Response:
         CHATBOT[token] = {}
         CHATBOT[token]['chatBot'] = chatBot
         CHATBOT[token]['useTime'] = time.time()
-    data = await chatBot.ask(question, getStyleEnum(style))
+    data = await chatBot.ask(question, conversation_style=getStyleEnum(style))
 
     if data.get('item').get('result').get('value') == 'Throttled':
         return GenerateResponse().error(120, '已上限,24小时后尝试')
@@ -253,7 +253,7 @@ async def ws(ws: WebSocket) -> str:
                 await ws.send_text(GenerateResponse().error(110, 'style不存在', True))
                 continue
 
-            data = await chatBot.ask(question, getStyleEnum(style))
+            data = await chatBot.ask(question, conversation_style=getStyleEnum(style))
 
             if data.get('item').get('result').get('value') == 'Throttled':
                 await ws.send_text(GenerateResponse().error(120, '已上限,24小时后尝试', True))
