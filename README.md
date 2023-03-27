@@ -45,7 +45,7 @@ message|消息|
 data|数据|
 answer|回答|
 urls|链接|
-done|完成|部分传输是否完成,当连接/ws_stream时存在
+done|完成|部分传输是否完成,当为流传输时存在
 reset|重置|下次对话是否被重置(code为500时也会被重置)
 token|令牌|用于连续对话,当请求API时存在
 ### 整体传输
@@ -65,8 +65,9 @@ token|令牌|用于连续对话,当请求API时存在
 ### 流传输
 > 一部分一部分返回.
 
-1. WebSocket连接/ws_stream.
-2. 当部分传输完成时,将会返回整体,done改为true,url才会有值.
+当部分传输完成时,将会返回整体,url才会有值,done改为true,reset显示为真实值(部分传输过程中无论下次是否被重置都显示为false).
+#### WebSocket
+WebSocket连接/ws_stream.
 ```
 {"code": 200, "message": "success", "data": {"answer": "您。", "urls": [], "done": false, "reset": false}}
 
@@ -83,6 +84,26 @@ token|令牌|用于连续对话,当请求API时存在
 {"code": 200, "message": "success", "data": {"answer": "。", "urls": [], "done": false, "reset": false}}
 
 {"code": 200, "message": "success", "data": {"answer": "您好，这是必应。", "urls": [{"title": "The New Bing - Learn More", "url": "https://www.bing.com/new"}], "done": true, "reset": false}}
+```
+#### API
+1. 请求方式: GET/POST.
+2. 请求地址: /api_stream.
+```
+{"code": 200, "message": "success", "data": {"answer": "您。", "urls": [], "done": false, "reset": false, "token": "7953d67b-eac2-457e-a2ee-fedc8ba53599"}}
+
+{"code": 200, "message": "success", "data": {"answer": "好", "urls": [], "done": false, "reset": false, "token": "7953d67b-eac2-457e-a2ee-fedc8ba53599"}}
+
+{"code": 200, "message": "success", "data": {"answer": "，", "urls": [], "done": false, "reset": false, "token": "7953d67b-eac2-457e-a2ee-fedc8ba53599"}}
+
+{"code": 200, "message": "success", "data": {"answer": "这。", "urls": [], "done": false, "reset": false, "token": "7953d67b-eac2-457e-a2ee-fedc8ba53599"}}
+
+{"code": 200, "message": "success", "data": {"answer": "是", "urls": [], "done": false, "reset": false, "token": "7953d67b-eac2-457e-a2ee-fedc8ba53599"}}
+
+{"code": 200, "message": "success", "data": {"answer": "必应", "urls": [], "done": false, "reset": false, "token": "7953d67b-eac2-457e-a2ee-fedc8ba53599"}}
+
+{"code": 200, "message": "success", "data": {"answer": "。", "urls": [], "done": false, "reset": false, "token": "7953d67b-eac2-457e-a2ee-fedc8ba53599"}}
+
+{"code": 200, "message": "success", "data": {"answer": "您好，这是必应。", "urls": [{"title": "The New Bing - Learn More", "url": "https://www.bing.com/new"}], "done": true, "reset": false, "token": "7953d67b-eac2-457e-a2ee-fedc8ba53599"}}
 ```
 ## emm
 1. 页面写的有点丑，有能力的大神，可以pull request一下，如果你有的example也可以提交.
