@@ -1,14 +1,14 @@
 ## 提示
-如出现报错，请先将EdgeGPT库更新到0.1.10.1+，还不能解决再提交issue.
+若报错,请先将EdgeGPT,BingImageCreator更新到最新版本.
 ## 介绍
 Bing Chat服务端,通过WebSocket/API实现通讯.
 ## 需求
 1. 语言: Python3.8+.
-2. 包: fastapi, uvicorn, asyncio, python-multipart, EdgeGPT.
+2. 包: fastapi, uvicorn, asyncio, python-multipart, EdgeGPT, BingImageCreator.
 3. 其他: New Bing账户.
 ## 配置
-1. 地址和端口分别在第15行和第16行.
-2. Cookie文件路径在第17行.
+1. 地址和端口分别在第17行和第18行.
+2. Cookie文件路径在第19行.
 ## 使用
 1. 浏览器安装Cookie-Editor扩展.
 2. 在[https://www.bing.com/chat](https://www.bing.com/chat)页面中点击扩展.
@@ -75,21 +75,29 @@ WebSocket连接/ws_stream.
 1. 请求方式: GET/POST.
 2. 请求地址: /api_stream.
 ```
-{"code": 200, "message": "success", "data": {"answer": "您。", "urls": [], "done": false, "reset": false, "token": "7953d67b-eac2-457e-a2ee-fedc8ba53599"}}
+data: {"code": 200, "message": "success", "data": {"answer": "您。", "urls": [], "done": false, "reset": false, "token": "7953d67b-eac2-457e-a2ee-fedc8ba53599"}}
 
-{"code": 200, "message": "success", "data": {"answer": "好", "urls": [], "done": false, "reset": false, "token": "7953d67b-eac2-457e-a2ee-fedc8ba53599"}}
+data: {"code": 200, "message": "success", "data": {"answer": "好", "urls": [], "done": false, "reset": false, "token": "7953d67b-eac2-457e-a2ee-fedc8ba53599"}}
 
-{"code": 200, "message": "success", "data": {"answer": "，", "urls": [], "done": false, "reset": false, "token": "7953d67b-eac2-457e-a2ee-fedc8ba53599"}}
+data: {"code": 200, "message": "success", "data": {"answer": "，", "urls": [], "done": false, "reset": false, "token": "7953d67b-eac2-457e-a2ee-fedc8ba53599"}}
 
-{"code": 200, "message": "success", "data": {"answer": "这。", "urls": [], "done": false, "reset": false, "token": "7953d67b-eac2-457e-a2ee-fedc8ba53599"}}
+data: {"code": 200, "message": "success", "data": {"answer": "这。", "urls": [], "done": false, "reset": false, "token": "7953d67b-eac2-457e-a2ee-fedc8ba53599"}}
 
-{"code": 200, "message": "success", "data": {"answer": "是", "urls": [], "done": false, "reset": false, "token": "7953d67b-eac2-457e-a2ee-fedc8ba53599"}}
+data: {"code": 200, "message": "success", "data": {"answer": "是", "urls": [], "done": false, "reset": false, "token": "7953d67b-eac2-457e-a2ee-fedc8ba53599"}}
 
-{"code": 200, "message": "success", "data": {"answer": "必应", "urls": [], "done": false, "reset": false, "token": "7953d67b-eac2-457e-a2ee-fedc8ba53599"}}
+data: {"code": 200, "message": "success", "data": {"answer": "必应", "urls": [], "done": false, "reset": false, "token": "7953d67b-eac2-457e-a2ee-fedc8ba53599"}}
 
-{"code": 200, "message": "success", "data": {"answer": "。", "urls": [], "done": false, "reset": false, "token": "7953d67b-eac2-457e-a2ee-fedc8ba53599"}}
+data: {"code": 200, "message": "success", "data": {"answer": "。", "urls": [], "done": false, "reset": false, "token": "7953d67b-eac2-457e-a2ee-fedc8ba53599"}}
 
-{"code": 200, "message": "success", "data": {"answer": "您好，这是必应。", "urls": [{"title": "The New Bing - Learn More", "url": "https://www.bing.com/new"}], "done": true, "reset": false, "token": "7953d67b-eac2-457e-a2ee-fedc8ba53599"}}
+data: {"code": 200, "message": "success", "data": {"answer": "您好，这是必应。", "urls": [{"title": "The New Bing - Learn More", "url": "https://www.bing.com/new"}], "done": true, "reset": false, "token": "7953d67b-eac2-457e-a2ee-fedc8ba53599"}}
+```
+## 图像生成
+1. 请求方式: GET/POST.
+2. 请求地址: /image.  
+3. 请求参数: keyword(仅支持英文)
+4. 返回示例:  
+```
+{"code": 200, "message": "success", "data": ["https://tse2.mm.bing.net/th/id/OIG.gZ22nCCQkj48ydKsjZKa", "https://tse2.mm.bing.net/th/id/OIG.rAYVVytOqj.ajgCh2ZtZ", "https://tse3.mm.bing.net/th/id/OIG.X8tmgTvvlIwtvSiFyHSE", "https://tse2.mm.bing.net/th/id/OIG.10fmeQUY9GO.wNV5FjzI"]}
 ```
 ## emm
 1. 页面写的有点丑，有能力的大神，可以pull request一下，如果你有的example也可以提交.

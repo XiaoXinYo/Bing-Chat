@@ -12,6 +12,7 @@ import uuid
 import time
 import json
 import re
+import BingImageCreator
 
 HOST = '0.0.0.0'
 PORT = 5000
@@ -60,7 +61,6 @@ def getAnswer(data: dict) -> str:
 
 def filterAnswer(answer: str) -> str:
     answer = re.sub(r'\[\^.*?\^]', '', answer)
-    answer = answer.rstrip()
     return answer
 
 def getStreamAnswer(data: dict) -> str:
@@ -114,23 +114,27 @@ class GenerateResponse:
         responseJSON = json.dumps(self.response, ensure_ascii=False)
         if self.onlyJSON:
             return responseJSON
+        elif self.stream:
+            return f'data: {responseJSON}\n\n'
         return Response(responseJSON, media_type='application/json')
 
-    def error(self, code: int, message: str, onlyJSON: bool=False) -> TYPE:
+    def error(self, code: int, message: str, onlyJSON: bool=False, stream=False) -> TYPE:
         self.response = {
             'code': code,
             'message': message
         }
         self.onlyJSON = onlyJSON
+        self.stream = stream
         return self._json()
 
-    def success(self, data: Any, onlyJSON: bool=False) -> TYPE:
+    def success(self, data: Any, onlyJSON: bool=False, stream=False) -> TYPE:
         self.response = {
             'code': 200,
             'message': 'success',
             'data': data
         }
         self.onlyJSON = onlyJSON
+        self.stream = stream
         return self._json()
 
 async def checkToken() -> None:
@@ -317,16 +321,16 @@ async def apiStream(request: Request) -> Response:
                 answer = filterAnswer(answer)
                 if answer:
                     info['answer'] = answer
-                    yield GenerateResponse().success(info, True)
+                    yield GenerateResponse().success(info, stream=True)
             else:
                 if data.get('item').get('result').get('value') == 'Throttled':
-                    yield GenerateResponse().error(120, '已上限,24小时后尝试', True)
+                    yield GenerateResponse().error(120, '已上限,24小时后尝试', stream=True)
                     break
                 
                 messages = data.get('item').get('messages')
                 info['answer'] = getStreamAnswer(data)
                 if 'text' not in messages[1]:
-                    yield GenerateResponse().success(info, True)
+                    yield GenerateResponse().success(info, stream=True)
                 info['done'] = True
                 info['urls'] = getUrl(data)
 
@@ -334,9 +338,26 @@ async def apiStream(request: Request) -> Response:
                     await chatBot.reset()
                     info['reset'] = True
                 
-                yield GenerateResponse().success(info, True)
+                yield GenerateResponse().success(info, stream=True)
     
-    return StreamingResponse(generator(), media_type='text/plain')
+    return StreamingResponse(generator(), media_type='text/event-stream')
+
+@APP.route('/image', methods=['GET', 'POST'])
+async def image(request: Request) -> Response:
+    keyword = (await getrequestParameter(request)).get('keyword')
+    if not keyword:
+        return GenerateResponse().error(110, '参数不能为空')
+    elif not re.match(r'[a-zA-Z]', keyword):
+        return GenerateResponse().error(110, '仅支持英文')
+
+    with open(COOKIE_FILE_PATH, encoding='utf-8') as file:
+        cookies = json.load(file)
+        for cookie in cookies:
+            if cookie.get('name') == '_U':
+                uCookie = cookie.get('value')
+                break
+    
+    return GenerateResponse().success(BingImageCreator.ImageGen(uCookie).get_images(keyword))
 
 if __name__ == '__main__':
     uvicorn.run(APP, host=HOST, port=PORT)
