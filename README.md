@@ -8,7 +8,8 @@ Bing Chat服务端,通过WebSocket/API实现通讯.
 3. 其他: New Bing账户.
 ## 配置
 1. 地址和端口分别在第17行和第18行.
-2. Cookie文件路径在第19行.
+2. Proxy在第19行.
+3. Cookie文件路径在第20行.
 ## 使用
 1. 浏览器安装Cookie-Editor扩展.
 2. 在[https://www.bing.com/chat](https://www.bing.com/chat)页面中点击扩展.

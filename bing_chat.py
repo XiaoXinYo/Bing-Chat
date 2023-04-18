@@ -2,7 +2,7 @@
 # Author: XiaoXinYo
 
 from typing import Union, Any, AsyncGenerator
-from fastapi import FastAPI, Request, WebSocket, Response
+from fastapi import FastAPI, WebSocket, Request, Response
 from fastapi.responses import StreamingResponse
 from fastapi.middleware.cors import CORSMiddleware
 import uvicorn
@@ -16,6 +16,7 @@ import BingImageCreator
 
 HOST = '0.0.0.0'
 PORT = 5000
+PROXY = ''
 COOKIE_FILE_PATH = './cookie.json'
 
 APP = FastAPI()
@@ -29,17 +30,20 @@ APP.add_middleware(
 STYLES = ['balanced', 'creative', 'precise']
 CHATBOT = {}
 
+def getTimeStamp() -> str:
+    return int(time.time())
+
 def getChatBot(token: str) -> tuple:
     global CHATBOT
     if token in CHATBOT:
         chatBot = CHATBOT[token]['chatBot']
-        CHATBOT[token]['useTime'] = time.time()
+        CHATBOT[token]['useTimeStamp'] = getTimeStamp()
     else:
-        chatBot = EdgeGPT.Chatbot(COOKIE_FILE_PATH)
+        chatBot = EdgeGPT.Chatbot(proxy=PROXY, cookiePath=COOKIE_FILE_PATH)
         token = str(uuid.uuid4())
         CHATBOT[token] = {}
         CHATBOT[token]['chatBot'] = chatBot
-        CHATBOT[token]['useTime'] = time.time()
+        CHATBOT[token]['useTimeStamp'] = getTimeStamp()
     return token, chatBot
 
 def getStyleEnum(style: str) -> EdgeGPT.ConversationStyle:
@@ -141,7 +145,7 @@ async def checkToken() -> None:
     global CHATBOT
     while True:
         for token in CHATBOT.copy():
-            if time.time() - CHATBOT[token]['useTime'] > 5 * 60:
+            if getTimeStamp() - CHATBOT[token]['useTimeStamp'] > 5 * 60:
                 await CHATBOT[token]['chatBot'].close()
                 del CHATBOT[token]
         await asyncio.sleep(60)
@@ -162,7 +166,7 @@ def error500(request: Request, exc: Exception) -> Response:
 async def ws(ws: WebSocket) -> str:
     await ws.accept()
 
-    chatBot = EdgeGPT.Chatbot(COOKIE_FILE_PATH)
+    chatBot = EdgeGPT.Chatbot(proxy=PROXY, cookiePath=COOKIE_FILE_PATH)
     while True:
         try:
             parameters = await ws.receive_json()
@@ -241,7 +245,7 @@ async def api(request: Request) -> Response:
 async def wsStream(ws: WebSocket) -> str:
     await ws.accept()
 
-    chatBot = EdgeGPT.Chatbot(COOKIE_FILE_PATH)
+    chatBot = EdgeGPT.Chatbot(proxy=PROXY, cookiePath=COOKIE_FILE_PATH)
     while True:
         try:
             parameters = await ws.receive_json()
@@ -349,7 +353,7 @@ async def image(request: Request) -> Response:
         return GenerateResponse().error(110, '参数不能为空')
     elif not re.match(r'[a-zA-Z]', keyword):
         return GenerateResponse().error(110, '仅支持英文')
-
+    
     with open(COOKIE_FILE_PATH, encoding='utf-8') as file:
         cookies = json.load(file)
         for cookie in cookies:
