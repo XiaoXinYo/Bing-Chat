@@ -5,14 +5,14 @@ from typing import Union, Any, AsyncGenerator
 from fastapi import FastAPI, WebSocket, Request, Response
 from fastapi.responses import StreamingResponse
 from fastapi.middleware.cors import CORSMiddleware
-import uvicorn
-import asyncio
+import time
 import EdgeGPT
 import uuid
-import time
-import json
 import re
+import asyncio
+import json
 import BingImageCreator
+import uvicorn
 
 HOST = '0.0.0.0'
 PORT = 5000
@@ -39,7 +39,7 @@ def getChatBot(token: str) -> tuple:
         chatBot = CHATBOT[token]['chatBot']
         CHATBOT[token]['useTimeStamp'] = getTimeStamp()
     else:
-        chatBot = EdgeGPT.Chatbot(proxy=PROXY, cookiePath=COOKIE_FILE_PATH)
+        chatBot = EdgeGPT.Chatbot(proxy=PROXY, cookie_path=COOKIE_FILE_PATH)
         token = str(uuid.uuid4())
         CHATBOT[token] = {}
         CHATBOT[token]['chatBot'] = chatBot
@@ -114,7 +114,7 @@ class GenerateResponse:
         self.response = {}
         self.onlyJSON = False
     
-    def _json(self) -> TYPE:
+    def json(self) -> TYPE:
         responseJSON = json.dumps(self.response, ensure_ascii=False)
         if self.onlyJSON:
             return responseJSON
@@ -129,7 +129,7 @@ class GenerateResponse:
         }
         self.onlyJSON = onlyJSON
         self.stream = stream
-        return self._json()
+        return self.json()
 
     def success(self, data: Any, onlyJSON: bool=False, stream=False) -> TYPE:
         self.response = {
@@ -139,7 +139,7 @@ class GenerateResponse:
         }
         self.onlyJSON = onlyJSON
         self.stream = stream
-        return self._json()
+        return self.json()
 
 async def checkToken() -> None:
     global CHATBOT
@@ -166,7 +166,7 @@ def error500(request: Request, exc: Exception) -> Response:
 async def ws(ws: WebSocket) -> str:
     await ws.accept()
 
-    chatBot = EdgeGPT.Chatbot(proxy=PROXY, cookiePath=COOKIE_FILE_PATH)
+    chatBot = EdgeGPT.Chatbot(proxy=PROXY, cookie_path=COOKIE_FILE_PATH)
     while True:
         try:
             parameters = await ws.receive_json()
@@ -245,7 +245,7 @@ async def api(request: Request) -> Response:
 async def wsStream(ws: WebSocket) -> str:
     await ws.accept()
 
-    chatBot = EdgeGPT.Chatbot(proxy=PROXY, cookiePath=COOKIE_FILE_PATH)
+    chatBot = EdgeGPT.Chatbot(proxy=PROXY, cookie_path=COOKIE_FILE_PATH)
     while True:
         try:
             parameters = await ws.receive_json()

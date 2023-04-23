@@ -1,6 +1,6 @@
 fastapi
+python-multipart
 uvicorn
 asyncio
-python-multipart
 EdgeGPT
 BingImageCreator
