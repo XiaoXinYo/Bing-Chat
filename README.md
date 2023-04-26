@@ -1,7 +1,8 @@
+## 此仓库不再维护,请前往[Chat-API](https://github.com/XiaoXinYo/Chat-API).
 ## 提示
 若报错,请先将EdgeGPT,BingImageCreator更新到最新版本.
 ## 介绍
-Bing Chat服务端,通过WebSocket/API实现通讯.
+Bing Chat服务端,通过WebSocket/WebAPI实现通讯.
 ## 需求
 1. 语言: Python3.8+.
 2. 包: fastapi,uvicorn,asyncio,python-multipart,EdgeGPT,BingImageCreator.
@@ -10,21 +11,20 @@ Bing Chat服务端,通过WebSocket/API实现通讯.
 1. 监听地址和端口分别在第17行和第18行.
 2. Proxy在第19行.
 3. Cookie文件路径在第20行.
-## 使用
+## Cookie
 1. 浏览器安装Cookie-Editor扩展.
 2. 在[https://www.bing.com/chat](https://www.bing.com/chat)页面中点击扩展.
 3. 点击扩展右下角的Export,将复制的内容粘贴到Cookie文件.
-4. 运行bing_chat.py.
 ## 参数
 ### 请求
 名称|必填|中文名|说明
 ---|---|---|---
-token|否|令牌|当请求API时,填则为连续对话,不填则为新对话,值可在响应中获取
+token|否|令牌|当请求WebAPI时,填则为连续对话,不填则为新对话,值可在响应中获取
 style|是|风格|balanced代表平衡,creative代表创造,precise代表精确
 question|是|问题|
 
-注:WebSocket发送需JSON格式.
-### 响应
+提示: WebSocket发送需JSON格式.
+### 响应(JSON)
 名称|中文名|说明
 ---|---|---
 code|状态码|
@@ -34,7 +34,7 @@ answer|回答|
 urls|链接|
 done|完成|部分传输是否完成,当为流传输时存在
 reset|重置|下次对话是否被重置(code为500时也会被重置)
-token|令牌|用于连续对话,当请求API时存在
+token|令牌|用于连续对话,当请求WebAPI时存在
 ### 整体传输
 > 等待Bing Chat响应完后返回.
 
@@ -43,7 +43,7 @@ token|令牌|用于连续对话,当请求API时存在
 ```
 {"code": 200, "message": "success", "data": {"answer": "您好，这是必应。", "urls":[{"title": "The New Bing - Learn More", "url": "https://www.bing.com/new"}], "reset": false}}
 ```
-#### API
+#### WebAPI
 1. 请求方式: GET/POST.
 2. 请求地址: /api.
 ```
@@ -72,7 +72,7 @@ WebSocket连接/ws_stream.
 
 {"code": 200, "message": "success", "data": {"answer": "您好，这是必应。", "urls": [{"title": "The New Bing - Learn More", "url": "https://www.bing.com/new"}], "done": true, "reset": false}}
 ```
-#### API
+#### WebAPI
 1. 请求方式: GET/POST.
 2. 请求地址: /api_stream.
 ```
@@ -92,11 +92,25 @@ data: {"code": 200, "message": "success", "data": {"answer": "。", "urls": [], 
 
 data: {"code": 200, "message": "success", "data": {"answer": "您好，这是必应。", "urls": [{"title": "The New Bing - Learn More", "url": "https://www.bing.com/new"}], "done": true, "reset": false, "token": "7953d67b-eac2-457e-a2ee-fedc8ba53599"}}
 ```
-## 图像生成
-1. 请求方式: GET/POST.
-2. 请求地址: /image.  
-3. 请求参数: keyword(仅支持英文)
-4. 返回示例:  
+## 图像生成 
+### 请求
+1. 方式: GET/POST.
+2. 网址: /image. 
+3. 参数:
+
+名称|必填|中文名|说明
+---|---|---|---
+keyword|是|关键词|仅支持英文
+### 响应
+1. 格式: JSON.
+2. 参数:
+
+名称|中文名|说明
+---|---|---
+code|状态码|
+message|消息|
+data|数据|网址
+3. 示例:
 ```
 {"code": 200, "message": "success", "data": ["https://tse2.mm.bing.net/th/id/OIG.gZ22nCCQkj48ydKsjZKa", "https://tse2.mm.bing.net/th/id/OIG.rAYVVytOqj.ajgCh2ZtZ", "https://tse3.mm.bing.net/th/id/OIG.X8tmgTvvlIwtvSiFyHSE", "https://tse2.mm.bing.net/th/id/OIG.10fmeQUY9GO.wNV5FjzI"]}
 ```
@@ -105,4 +119,4 @@ data: {"code": 200, "message": "success", "data": {"answer": "您好，这是必
 2. 搭建好建议不要对外开放，因为目前Bing Chat24小时内有次数限制.
 3. 至于反应快慢的问题，要看回答文本的长度，如果文本长度过长，回复时间会比较长.
 4. 关于整体传输和流传输，整体传输由于要等待Bing完全响应才能开始传输，所以时间要久一点。流传输会先返回一部分，所以看起来比较快，但其实最终的完成时间都是一样的.
-5. 连续对话问题：websocket是默认支持连续对话的。对于API来说，如果需要进行连续对话，首先需要在第一次请求时获取token，然后在后续请求中带上token，就可以实现连续对话了.
+5. 连续对话问题：websocket是默认支持连续对话的。对于WebAPI来说，如果需要进行连续对话，首先需要在第一次请求时获取token，然后在后续请求中带上token，就可以实现连续对话了.

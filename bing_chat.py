@@ -35,15 +35,17 @@ def getTimeStamp() -> str:
 
 def getChatBot(token: str) -> tuple:
     global CHATBOT
-    if token in CHATBOT:
-        chatBot = CHATBOT[token]['chatBot']
-        CHATBOT[token]['useTimeStamp'] = getTimeStamp()
+    if token:
+        if token in CHATBOT:
+            chatBot = CHATBOT.get(token).get('chatBot')
+        else:
+            return token, None
     else:
         chatBot = EdgeGPT.Chatbot(proxy=PROXY, cookie_path=COOKIE_FILE_PATH)
         token = str(uuid.uuid4())
         CHATBOT[token] = {}
         CHATBOT[token]['chatBot'] = chatBot
-        CHATBOT[token]['useTimeStamp'] = getTimeStamp()
+    CHATBOT[token]['useTimeStamp'] = getTimeStamp()
     return token, chatBot
 
 def getStyleEnum(style: str) -> EdgeGPT.ConversationStyle:
@@ -73,7 +75,7 @@ def getStreamAnswer(data: dict) -> str:
         answer = messages[1].get('text')
     else:
         answer = messages[1].get('adaptiveCards')[0].get('body')[0].get('text')
-    answer = answer = filterAnswer(answer)
+    answer = filterAnswer(answer)
     return answer
 
 def getUrl(data: dict) -> list:
@@ -146,7 +148,7 @@ async def checkToken() -> None:
     while True:
         for token in CHATBOT.copy():
             if getTimeStamp() - CHATBOT[token]['useTimeStamp'] > 5 * 60:
-                await CHATBOT[token]['chatBot'].close()
+                await CHATBOT.get(token).get('chatBot').close()
                 del CHATBOT[token]
         await asyncio.sleep(60)
 
@@ -219,6 +221,8 @@ async def api(request: Request) -> Response:
         return GenerateResponse().error(110, 'style不存在')
     
     token, chatBot = getChatBot(token)
+    if not chatBot:
+        return GenerateResponse().error(120, 'token不存在')
     data = await chatBot.ask(question, conversation_style=getStyleEnum(style))
     
     if data.get('item').get('result').get('value') == 'Throttled':
@@ -309,6 +313,9 @@ async def apiStream(request: Request) -> Response:
         return GenerateResponse().error(110, 'style不存在')
     
     token, chatBot = getChatBot(token)
+    if not chatBot:
+        return GenerateResponse().error(120, 'token不存在')
+
     async def generator() -> AsyncGenerator:
         index = 0
         info = {
